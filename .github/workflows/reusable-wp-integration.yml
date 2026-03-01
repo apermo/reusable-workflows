@@ -126,12 +126,17 @@ jobs:
                   # Download WP core (still needed for ABSPATH)
                   curl -sL "https://wordpress.org/wordpress-${WP_VERSION}.tar.gz" | tar xz --strip-components=1 -C /tmp/wordpress
 
-                  # wp-phpunit versions mirror WP releases exactly
+                  # Extract major.minor to pin wp-phpunit to matching WP release
+                  WP_MINOR=$(echo "$WP_VERSION" | grep -oP '^\d+\.\d+')
+
+                  # wp-phpunit versions mirror WP releases; PHPUnit 9 required by WP test suite
                   composer require --dev \
-                      "wp-phpunit/wp-phpunit:^${WP_VERSION%.*}" \
+                      "wp-phpunit/wp-phpunit:${WP_MINOR}.*" \
+                      "phpunit/phpunit:^9.6" \
                       --update-with-all-dependencies --no-interaction --quiet \
                   || composer require --dev \
                       "wp-phpunit/wp-phpunit:*" \
+                      "phpunit/phpunit:^9.6" \
                       --update-with-all-dependencies --no-interaction --quiet
 
             - name: Generate test config
