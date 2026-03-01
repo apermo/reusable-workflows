@@ -93,23 +93,14 @@ jobs:
 
             - run: composer install --no-interaction --prefer-dist
 
-            - name: Downgrade PHPUnit for WP test suite
-              run: |
-                  # WP test suite uses parseTestMethodAnnotations() removed in PHPUnit 10.
-                  # Downgrade to PHPUnit 9.x which is the latest WP-compatible version.
-                  composer require --dev phpunit/phpunit:^9.6 --update-with-all-dependencies --no-interaction --quiet
-
             - name: Resolve WP version
               id: wp-version
               run: |
                   WP_INPUT="${{ matrix.wp }}"
-                  SVN_TAG=""
 
                   if [ "$WP_INPUT" = "latest" ]; then
                       WP_VERSION=$(curl -s https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers[0].version')
-                      SVN_TAG="tags/${WP_VERSION}"
                       echo "version=${WP_VERSION}" >> "$GITHUB_OUTPUT"
-                      echo "svn_tag=${SVN_TAG}" >> "$GITHUB_OUTPUT"
                       echo "skip=false" >> "$GITHUB_OUTPUT"
                   elif [ "$WP_INPUT" = "beta" ]; then
                       BETA_VERSION=$(curl -s https://api.wordpress.org/core/version-check/1.7/ | jq -r '[.offers[] | select(.response == "development")] | first // empty | .version')
@@ -117,37 +108,33 @@ jobs:
                           echo "No active beta/RC phase — skipping."
                           echo "skip=true" >> "$GITHUB_OUTPUT"
                       else
-                          SVN_TAG="trunk"
                           echo "version=${BETA_VERSION}" >> "$GITHUB_OUTPUT"
-                          echo "svn_tag=${SVN_TAG}" >> "$GITHUB_OUTPUT"
                           echo "skip=false" >> "$GITHUB_OUTPUT"
                       fi
                   else
-                      WP_VERSION="${WP_INPUT}"
-                      SVN_TAG="tags/${WP_VERSION}"
-                      echo "version=${WP_VERSION}" >> "$GITHUB_OUTPUT"
-                      echo "svn_tag=${SVN_TAG}" >> "$GITHUB_OUTPUT"
+                      echo "version=${WP_INPUT}" >> "$GITHUB_OUTPUT"
                       echo "skip=false" >> "$GITHUB_OUTPUT"
                   fi
 
-            - name: Install SVN
-              if: steps.wp-version.outputs.skip != 'true'
-              run: sudo apt-get install -y subversion
-
-            - name: Install WP test suite
+            - name: Install WP test suite via Composer
               if: steps.wp-version.outputs.skip != 'true'
               run: |
                   WP_VERSION="${{ steps.wp-version.outputs.version }}"
-                  SVN_TAG="${{ steps.wp-version.outputs.svn_tag }}"
 
-                  mkdir -p /tmp/wordpress /tmp/wordpress-tests-lib
+                  mkdir -p /tmp/wordpress
 
-                  # Download WP core
+                  # Download WP core (still needed for ABSPATH)
                   curl -sL "https://wordpress.org/wordpress-${WP_VERSION}.tar.gz" | tar xz --strip-components=1 -C /tmp/wordpress
 
-                  # Checkout WP test suite
-                  svn co --quiet "https://develop.svn.wordpress.org/${SVN_TAG}/tests/phpunit/includes/" /tmp/wordpress-tests-lib/includes
-                  svn co --quiet "https://develop.svn.wordpress.org/${SVN_TAG}/tests/phpunit/data/" /tmp/wordpress-tests-lib/data
+                  # wp-phpunit versions mirror WP releases exactly
+                  composer require --dev \
+                      "wp-phpunit/wp-phpunit:^${WP_VERSION%.*}" \
+                      "phpunit/phpunit:^9.6" \
+                      --update-with-all-dependencies --no-interaction --quiet \
+                  || composer require --dev \
+                      "wp-phpunit/wp-phpunit:*" \
+                      "phpunit/phpunit:^9.6" \
+                      --update-with-all-dependencies --no-interaction --quiet
 
             - name: Generate test config
               if: steps.wp-version.outputs.skip != 'true'
@@ -159,7 +146,7 @@ jobs:
                           -e "s|{{DB_PASSWORD}}|root|g" \
                           -e "s|{{DB_HOST}}|127.0.0.1|g" \
                           -e "s|{{ABSPATH}}|/tmp/wordpress/|g" \
-                          wp-tests-config.php.dist > /tmp/wordpress-tests-lib/wp-tests-config.php
+                          wp-tests-config.php.dist > wp-tests-config.php
                   else
                       echo "No wp-tests-config.php.dist found — skipping config generation."
                       exit 1
@@ -168,7 +155,7 @@ jobs:
             - name: Run integration tests
               if: steps.wp-version.outputs.skip != 'true'
               env:
-                  WP_TESTS_DIR: /tmp/wordpress-tests-lib
+                  WP_TESTS_DIR: ${{ github.workspace }}/vendor/wp-phpunit/wp-phpunit
                   WP_CORE_DIR: /tmp/wordpress
                   WP_MULTISITE: ${{ matrix.multisite && '1' || '0' }}
               run: composer ${{ inputs.test-command }}
