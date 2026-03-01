@@ -1,0 +1,182 @@
+name: Reusable WP E2E
+
+on:
+    workflow_call:
+        inputs:
+            php-version:
+                description: 'PHP version'
+                required: false
+                type: string
+                default: '8.4'
+            node-version:
+                description: 'Node.js version'
+                required: false
+                type: string
+                default: '22'
+            wp-versions:
+                description: 'JSON array of WP versions (e.g. "latest", "6.7")'
+                required: false
+                type: string
+                default: '["latest"]'
+            multisite:
+                description: 'Multisite mode: "none", "both", or "only"'
+                required: false
+                type: string
+                default: 'none'
+            project-mode:
+                description: 'Project mode: "plugin" or "theme"'
+                required: false
+                type: string
+                default: 'plugin'
+
+jobs:
+    matrix-prep:
+        name: Prepare matrix
+        runs-on: ubuntu-latest
+        outputs:
+            multisite: ${{ steps.multisite.outputs.matrix }}
+        steps:
+            - id: multisite
+              run: |
+                  case "${{ inputs.multisite }}" in
+                      both) echo "matrix=[false, true]" >> "$GITHUB_OUTPUT" ;;
+                      only) echo "matrix=[true]" >> "$GITHUB_OUTPUT" ;;
+                      *)    echo "matrix=[false]" >> "$GITHUB_OUTPUT" ;;
+                  esac
+
+    e2e:
+        name: WP ${{ matrix.wp }}${{ matrix.multisite && ' / multisite' || '' }}
+        needs: matrix-prep
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                wp: ${{ fromJson(inputs.wp-versions) }}
+                multisite: ${{ fromJson(needs.matrix-prep.outputs.multisite) }}
+        services:
+            mysql:
+                image: mysql:8.0
+                env:
+                    MYSQL_ROOT_PASSWORD: root
+                    MYSQL_DATABASE: wordpress
+                ports:
+                    - 3306:3306
+                options: >-
+                    --health-cmd="mysqladmin ping"
+                    --health-interval=10s
+                    --health-timeout=5s
+                    --health-retries=5
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ inputs.php-version }}
+                  extensions: mysqli, intl, mbstring
+                  coverage: none
+                  tools: wp-cli
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ inputs.node-version }}
+                  cache: npm
+
+            - run: composer install --no-interaction --prefer-dist
+
+            - run: npm ci
+
+            - name: Install Playwright browsers
+              run: npx playwright install --with-deps chromium
+
+            - name: Resolve WP version
+              id: wp-version
+              run: |
+                  WP_INPUT="${{ matrix.wp }}"
+
+                  if [ "$WP_INPUT" = "latest" ]; then
+                      WP_VERSION=$(curl -s https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers[0].version')
+                      echo "version=${WP_VERSION}" >> "$GITHUB_OUTPUT"
+                  else
+                      echo "version=${WP_INPUT}" >> "$GITHUB_OUTPUT"
+                  fi
+
+            - name: Set up WordPress
+              run: |
+                  WP_VERSION="${{ steps.wp-version.outputs.version }}"
+
+                  mkdir -p /tmp/wordpress
+                  curl -sL "https://wordpress.org/wordpress-${WP_VERSION}.tar.gz" | tar xz --strip-components=1 -C /tmp/wordpress
+
+                  wp config create \
+                      --dbname=wordpress \
+                      --dbuser=root \
+                      --dbpass=root \
+                      --dbhost=127.0.0.1 \
+                      --path=/tmp/wordpress
+
+                  MULTISITE=${{ matrix.multisite }}
+                  if [ "$MULTISITE" = "true" ]; then
+                      wp core multisite-install \
+                          --url=http://localhost:8080 \
+                          --title="Test Site" \
+                          --admin_user=admin \
+                          --admin_password=admin \
+                          --admin_email=admin@example.com \
+                          --skip-email \
+                          --path=/tmp/wordpress
+                  else
+                      wp core install \
+                          --url=http://localhost:8080 \
+                          --title="Test Site" \
+                          --admin_user=admin \
+                          --admin_password=admin \
+                          --admin_email=admin@example.com \
+                          --skip-email \
+                          --path=/tmp/wordpress
+                  fi
+
+            - name: Activate project
+              run: |
+                  PROJECT_NAME=$(basename "${{ github.workspace }}")
+                  MODE="${{ inputs.project-mode }}"
+
+                  if [ "$MODE" = "plugin" ]; then
+                      ln -s "${{ github.workspace }}" "/tmp/wordpress/wp-content/plugins/${PROJECT_NAME}"
+                      NETWORK_FLAG=""
+                      if [ "${{ matrix.multisite }}" = "true" ]; then
+                          NETWORK_FLAG="--network"
+                      fi
+                      wp plugin activate "${PROJECT_NAME}" ${NETWORK_FLAG} --path=/tmp/wordpress || true
+                  else
+                      ln -s "${{ github.workspace }}" "/tmp/wordpress/wp-content/themes/${PROJECT_NAME}"
+                      if [ "${{ matrix.multisite }}" = "true" ]; then
+                          wp theme enable "${PROJECT_NAME}" --network --path=/tmp/wordpress || true
+                      fi
+                      wp theme activate "${PROJECT_NAME}" --path=/tmp/wordpress || true
+                  fi
+
+            - name: Start PHP server
+              run: php -S 0.0.0.0:8080 -t /tmp/wordpress/ &
+
+            - name: Wait for server
+              run: |
+                  for i in $(seq 1 10); do
+                      curl -s http://localhost:8080/ > /dev/null && break
+                      sleep 1
+                  done
+
+            - name: Run Playwright tests
+              run: npx playwright test
+              env:
+                  WP_BASE_URL: http://localhost:8080
+                  WP_ADMIN_USER: admin
+                  WP_ADMIN_PASSWORD: admin
+
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: playwright-report-wp${{ matrix.wp }}${{ matrix.multisite && '-multisite' || '' }}
+                  path: |
+                      playwright-report/
+                      test-results/
+                  retention-days: 7

@@ -14,6 +14,7 @@ All reusable workflows live in `.github/workflows/` with the `reusable-` prefix.
 |------|---------|
 | `reusable-ci.yml` | PHP CI (test matrix, PHPStan, PHPCS) |
 | `reusable-wp-integration.yml` | WP integration tests (real WP + MySQL matrix) |
+| `reusable-wp-e2e.yml` | WP E2E tests (Playwright + PHP built-in server) |
 | `reusable-release.yml` | CHANGELOG-driven release creation |
 | `reusable-pr-validation.yml` | CHANGELOG entry validation |
 | `reusable-conventional-commits.yml` | Commit message format validation |

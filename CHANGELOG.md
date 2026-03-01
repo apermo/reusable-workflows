@@ -17,4 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reusable stale issues/PRs workflow
 - Reusable WordPress.org SVN deploy workflow
 - Reusable WP integration test workflow with PHP × WP × multisite matrix
+- Reusable WP E2E test workflow with Playwright
 - Self-referencing CI as built-in integration test
+
+### Changed
+
+- WP integration workflow uses `wp-phpunit/wp-phpunit` Composer package instead of SVN checkout
