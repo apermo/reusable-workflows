@@ -8,5 +8,8 @@ on:
 jobs:
     release:
         uses: ./.github/workflows/reusable-release.yml
+        permissions:
+            contents: write
+            pull-requests: write
     conventional-commits:
         uses: ./.github/workflows/reusable-conventional-commits.yml
