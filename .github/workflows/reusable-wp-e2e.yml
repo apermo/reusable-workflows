@@ -79,11 +79,16 @@ jobs:
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ inputs.node-version }}
-                  cache: npm
 
             - run: composer install --no-interaction --prefer-dist
 
-            - run: npm ci
+            - name: Install Node.js dependencies
+              run: |
+                  if [ -f package-lock.json ]; then
+                      npm ci
+                  else
+                      npm install
+                  fi
 
             - name: Install Playwright browsers
               run: npx playwright install --with-deps chromium

@@ -129,11 +129,9 @@ jobs:
                   # wp-phpunit versions mirror WP releases exactly
                   composer require --dev \
                       "wp-phpunit/wp-phpunit:^${WP_VERSION%.*}" \
-                      "phpunit/phpunit:^9.6" \
                       --update-with-all-dependencies --no-interaction --quiet \
                   || composer require --dev \
                       "wp-phpunit/wp-phpunit:*" \
-                      "phpunit/phpunit:^9.6" \
                       --update-with-all-dependencies --no-interaction --quiet
 
             - name: Generate test config
@@ -156,6 +154,7 @@ jobs:
               if: steps.wp-version.outputs.skip != 'true'
               env:
                   WP_TESTS_DIR: ${{ github.workspace }}/vendor/wp-phpunit/wp-phpunit
+                  WP_PHPUNIT__TESTS_CONFIG: ${{ github.workspace }}/wp-tests-config.php
                   WP_CORE_DIR: /tmp/wordpress
                   WP_MULTISITE: ${{ matrix.multisite && '1' || '0' }}
               run: composer ${{ inputs.test-command }}
