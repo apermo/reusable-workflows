@@ -93,6 +93,12 @@ jobs:
 
             - run: composer install --no-interaction --prefer-dist
 
+            - name: Downgrade PHPUnit for WP test suite
+              run: |
+                  # WP test suite uses parseTestMethodAnnotations() removed in PHPUnit 10.
+                  # Downgrade to PHPUnit 9.x which is the latest WP-compatible version.
+                  composer require --dev phpunit/phpunit:^9.6 --update-with-all-dependencies --no-interaction --quiet
+
             - name: Resolve WP version
               id: wp-version
               run: |
