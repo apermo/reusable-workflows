@@ -1,0 +1,69 @@
+name: Reusable WordPress.org Deploy
+
+on:
+    workflow_call:
+        inputs:
+            slug:
+                description: 'WordPress.org plugin/theme slug (defaults to repo name)'
+                required: false
+                type: string
+            assets-dir:
+                description: 'Path to WordPress.org assets (banners, icons, screenshots)'
+                required: false
+                type: string
+                default: '.wordpress-org'
+            build-dir:
+                description: 'Path to build directory (false to skip build copy)'
+                required: false
+                type: string
+            generate-zip:
+                description: 'Generate a zip file as build artifact'
+                required: false
+                type: boolean
+                default: false
+            dry-run:
+                description: 'Run without committing to SVN'
+                required: false
+                type: boolean
+                default: false
+        secrets:
+            svn-username:
+                description: 'WordPress.org SVN username'
+                required: true
+            svn-password:
+                description: 'WordPress.org SVN password'
+                required: true
+
+jobs:
+    deploy:
+        name: Deploy to WordPress.org
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.4'
+                  coverage: none
+
+            - name: Install production dependencies
+              run: composer install --no-dev --no-interaction --prefer-dist
+
+            - name: Deploy to WordPress.org
+              uses: 10up/action-wordpress-plugin-deploy@stable
+              with:
+                  generate-zip: ${{ inputs.generate-zip }}
+                  dry-run: ${{ inputs.dry-run }}
+              env:
+                  SVN_USERNAME: ${{ secrets.svn-username }}
+                  SVN_PASSWORD: ${{ secrets.svn-password }}
+                  SLUG: ${{ inputs.slug }}
+                  ASSETS_DIR: ${{ inputs.assets-dir }}
+                  BUILD_DIR: ${{ inputs.build-dir }}
+
+            - name: Upload zip artifact
+              if: inputs.generate-zip
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ inputs.slug || github.event.repository.name }}
+                  path: ${{ github.workspace }}/*.zip

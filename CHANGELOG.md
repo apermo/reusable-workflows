@@ -15,4 +15,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reusable conventional commits validation workflow
 - Reusable prerelease workflow for release branches
 - Reusable stale issues/PRs workflow
+- Reusable WordPress.org SVN deploy workflow
 - Self-referencing CI as built-in integration test
