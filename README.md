@@ -8,6 +8,33 @@ Shared GitHub Actions reusable workflows for apermo repositories.
 
 ## Workflows
 
+### `reusable-wp-integration.yml`
+
+WordPress integration test pipeline with real WP + MySQL. Supports PHP × WP version × multisite matrix.
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `php-versions` | string (JSON) | `["8.3", "8.4"]` | PHP versions to test |
+| `wp-versions` | string (JSON) | `["latest"]` | WP versions (`"latest"`, `"6.7"`, `"beta"`) |
+| `multisite` | string | `"none"` | `"none"`, `"both"`, or `"only"` |
+| `project-mode` | string | `"plugin"` | `"plugin"` or `"theme"` |
+| `test-command` | string | `"test:integration"` | Composer script to run |
+| `php-version-coverage` | string | `""` | PHP version for coverage (empty = none) |
+
+| Secret | Required | Description |
+|--------|----------|-------------|
+| `codecov-token` | No | Codecov upload token |
+
+```yaml
+jobs:
+  integration:
+    uses: apermo/reusable-workflows/.github/workflows/reusable-wp-integration.yml@main
+    with:
+      php-versions: '["8.1", "8.4"]'
+      wp-versions: '["latest", "6.6"]'
+      multisite: 'both'
+```
+
 ### `reusable-ci.yml`
 
 PHP CI pipeline with configurable test matrix, PHPStan, and PHPCS.

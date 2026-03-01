@@ -1,0 +1,173 @@
+name: Reusable WP Integration
+
+on:
+    workflow_call:
+        inputs:
+            php-versions:
+                description: 'JSON array of PHP versions to test'
+                required: false
+                type: string
+                default: '["8.3", "8.4"]'
+            wp-versions:
+                description: 'JSON array of WP versions (e.g. "latest", "6.7", "6.6", "beta")'
+                required: false
+                type: string
+                default: '["latest"]'
+            multisite:
+                description: 'Multisite mode: "none", "both", or "only"'
+                required: false
+                type: string
+                default: 'none'
+            project-mode:
+                description: 'Project mode: "plugin" or "theme"'
+                required: false
+                type: string
+                default: 'plugin'
+            test-command:
+                description: 'Composer script to run'
+                required: false
+                type: string
+                default: 'test:integration'
+            php-version-coverage:
+                description: 'PHP version for coverage collection (empty = no coverage)'
+                required: false
+                type: string
+                default: ''
+        secrets:
+            codecov-token:
+                description: 'Codecov upload token'
+                required: false
+
+jobs:
+    matrix-prep:
+        name: Prepare matrix
+        runs-on: ubuntu-latest
+        outputs:
+            multisite: ${{ steps.multisite.outputs.matrix }}
+        steps:
+            - id: multisite
+              run: |
+                  case "${{ inputs.multisite }}" in
+                      both) echo "matrix=[false, true]" >> "$GITHUB_OUTPUT" ;;
+                      only) echo "matrix=[true]" >> "$GITHUB_OUTPUT" ;;
+                      *)    echo "matrix=[false]" >> "$GITHUB_OUTPUT" ;;
+                  esac
+
+    integration:
+        name: PHP ${{ matrix.php }} / WP ${{ matrix.wp }}${{ matrix.multisite && ' / multisite' || '' }}
+        needs: matrix-prep
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                php: ${{ fromJson(inputs.php-versions) }}
+                wp: ${{ fromJson(inputs.wp-versions) }}
+                multisite: ${{ fromJson(needs.matrix-prep.outputs.multisite) }}
+        services:
+            mysql:
+                image: mysql:8.0
+                env:
+                    MYSQL_ROOT_PASSWORD: root
+                    MYSQL_DATABASE: wordpress_tests
+                ports:
+                    - 3306:3306
+                options: >-
+                    --health-cmd="mysqladmin ping"
+                    --health-interval=10s
+                    --health-timeout=5s
+                    --health-retries=5
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  extensions: mysqli, intl, mbstring
+                  coverage: ${{ matrix.php == inputs.php-version-coverage && 'pcov' || 'none' }}
+
+            - uses: actions/cache@v4
+              with:
+                  path: vendor
+                  key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+                  restore-keys: composer-${{ matrix.php }}-
+
+            - run: composer install --no-interaction --prefer-dist
+
+            - name: Resolve WP version
+              id: wp-version
+              run: |
+                  WP_INPUT="${{ matrix.wp }}"
+                  SVN_TAG=""
+
+                  if [ "$WP_INPUT" = "latest" ]; then
+                      WP_VERSION=$(curl -s https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers[0].version')
+                      SVN_TAG="tags/${WP_VERSION}"
+                      echo "version=${WP_VERSION}" >> "$GITHUB_OUTPUT"
+                      echo "svn_tag=${SVN_TAG}" >> "$GITHUB_OUTPUT"
+                      echo "skip=false" >> "$GITHUB_OUTPUT"
+                  elif [ "$WP_INPUT" = "beta" ]; then
+                      BETA_VERSION=$(curl -s https://api.wordpress.org/core/version-check/1.7/ | jq -r '[.offers[] | select(.response == "development")] | first // empty | .version')
+                      if [ -z "$BETA_VERSION" ]; then
+                          echo "No active beta/RC phase — skipping."
+                          echo "skip=true" >> "$GITHUB_OUTPUT"
+                      else
+                          SVN_TAG="trunk"
+                          echo "version=${BETA_VERSION}" >> "$GITHUB_OUTPUT"
+                          echo "svn_tag=${SVN_TAG}" >> "$GITHUB_OUTPUT"
+                          echo "skip=false" >> "$GITHUB_OUTPUT"
+                      fi
+                  else
+                      WP_VERSION="${WP_INPUT}"
+                      SVN_TAG="tags/${WP_VERSION}"
+                      echo "version=${WP_VERSION}" >> "$GITHUB_OUTPUT"
+                      echo "svn_tag=${SVN_TAG}" >> "$GITHUB_OUTPUT"
+                      echo "skip=false" >> "$GITHUB_OUTPUT"
+                  fi
+
+            - name: Install WP test suite
+              if: steps.wp-version.outputs.skip != 'true'
+              run: |
+                  WP_VERSION="${{ steps.wp-version.outputs.version }}"
+                  SVN_TAG="${{ steps.wp-version.outputs.svn_tag }}"
+
+                  mkdir -p /tmp/wordpress /tmp/wordpress-tests-lib
+
+                  # Download WP core
+                  curl -sL "https://wordpress.org/wordpress-${WP_VERSION}.tar.gz" | tar xz --strip-components=1 -C /tmp/wordpress
+
+                  # Checkout WP test suite
+                  svn co --quiet "https://develop.svn.wordpress.org/${SVN_TAG}/tests/phpunit/includes/" /tmp/wordpress-tests-lib/includes
+                  svn co --quiet "https://develop.svn.wordpress.org/${SVN_TAG}/tests/phpunit/data/" /tmp/wordpress-tests-lib/data
+
+            - name: Generate test config
+              if: steps.wp-version.outputs.skip != 'true'
+              run: |
+                  if [ -f wp-tests-config.php.dist ]; then
+                      sed \
+                          -e "s|{{DB_NAME}}|wordpress_tests|g" \
+                          -e "s|{{DB_USER}}|root|g" \
+                          -e "s|{{DB_PASSWORD}}|root|g" \
+                          -e "s|{{DB_HOST}}|127.0.0.1|g" \
+                          -e "s|{{ABSPATH}}|/tmp/wordpress/|g" \
+                          wp-tests-config.php.dist > /tmp/wordpress-tests-lib/wp-tests-config.php
+                  else
+                      echo "No wp-tests-config.php.dist found — skipping config generation."
+                      exit 1
+                  fi
+
+            - name: Run integration tests
+              if: steps.wp-version.outputs.skip != 'true'
+              env:
+                  WP_TESTS_DIR: /tmp/wordpress-tests-lib
+                  WP_CORE_DIR: /tmp/wordpress
+                  WP_MULTISITE: ${{ matrix.multisite && '1' || '0' }}
+              run: composer ${{ inputs.test-command }}
+
+            - uses: codecov/codecov-action@v5
+              if: >-
+                  steps.wp-version.outputs.skip != 'true'
+                  && matrix.php == inputs.php-version-coverage
+                  && inputs.php-version-coverage != ''
+              with:
+                  files: coverage.xml
+                  token: ${{ secrets.codecov-token }}
