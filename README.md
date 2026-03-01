@@ -43,6 +43,7 @@ PHP CI pipeline with configurable test matrix, PHPStan, and PHPCS.
 |-------|------|---------|-------------|
 | `php-versions` | string (JSON) | `["8.3", "8.4"]` | PHP versions to test |
 | `php-version-coverage` | string | `8.4` | PHP version for coverage |
+| `test-command` | string | `"test"` | Composer script to run |
 | `run-phpstan` | boolean | `true` | Run PHPStan analysis |
 | `run-phpcs` | boolean | `true` | Run PHPCS check |
 | `codecov-upload` | boolean | `false` | Upload to Codecov |

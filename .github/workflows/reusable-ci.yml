@@ -23,6 +23,11 @@ on:
                 required: false
                 type: boolean
                 default: true
+            test-command:
+                description: 'Composer script to run for tests'
+                required: false
+                type: string
+                default: 'test'
             codecov-upload:
                 description: 'Upload coverage to Codecov'
                 required: false
@@ -56,10 +61,10 @@ jobs:
 
             - run: composer install --no-interaction --prefer-dist
 
-            - run: composer test
+            - run: composer ${{ inputs.test-command }}
               if: matrix.php != inputs.php-version-coverage
 
-            - run: composer test -- --coverage-clover=coverage.xml
+            - run: composer ${{ inputs.test-command }} -- --coverage-clover=coverage.xml
               if: matrix.php == inputs.php-version-coverage
 
             - uses: codecov/codecov-action@v5
