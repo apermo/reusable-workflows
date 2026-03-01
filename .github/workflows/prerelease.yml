@@ -1,0 +1,12 @@
+name: Prerelease
+
+on:
+    workflow_dispatch:
+        inputs:
+            label:
+                description: 'Prerelease label (e.g. beta.1, RC.1)'
+                required: true
+
+jobs:
+    prerelease:
+        uses: ./.github/workflows/reusable-prerelease.yml

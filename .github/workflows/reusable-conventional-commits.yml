@@ -1,0 +1,61 @@
+name: Reusable Conventional Commits
+
+on:
+    workflow_call:
+        inputs:
+            max-length:
+                description: 'Maximum subject line length'
+                required: false
+                type: number
+                default: 72
+            allowed-types:
+                description: 'Pipe-separated list of allowed types'
+                required: false
+                type: string
+                default: 'feat|fix|docs|style|refactor|test|chore|perf'
+
+jobs:
+    validate:
+        name: Check Commit Message Format
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Validate commits
+              env:
+                  MAX_LENGTH: ${{ inputs.max-length }}
+                  ALLOWED_TYPES: ${{ inputs.allowed-types }}
+              run: |
+                  FAILED=0
+
+                  if [ "${{ github.event_name }}" = "pull_request" ]; then
+                      COMMITS=$(git log --format="%H %s" origin/${{ github.base_ref }}..HEAD)
+                  else
+                      COMMITS=$(git log --format="%H %s" -1)
+                  fi
+
+                  while IFS= read -r line; do
+                      [ -z "$line" ] && continue
+
+                      HASH=$(echo "$line" | cut -d' ' -f1)
+                      MSG=$(echo "$line" | cut -d' ' -f2-)
+
+                      # Skip merge commits
+                      if [[ "$MSG" == Merge* ]]; then
+                          continue
+                      fi
+
+                      if ! echo "$MSG" | grep -qP "^(${ALLOWED_TYPES})(\(.+\))?: .{1,}$"; then
+                          echo "::error::Invalid commit message: $MSG ($HASH)"
+                          FAILED=1
+                      fi
+
+                      if [ ${#MSG} -gt "$MAX_LENGTH" ]; then
+                          echo "::error::Commit message too long (${#MSG} > ${MAX_LENGTH}): $MSG"
+                          FAILED=1
+                      fi
+                  done <<< "$COMMITS"
+
+                  exit $FAILED

@@ -1,0 +1,111 @@
+name: Reusable CI
+
+on:
+    workflow_call:
+        inputs:
+            php-versions:
+                description: 'JSON array of PHP versions to test'
+                required: false
+                type: string
+                default: '["8.3", "8.4"]'
+            php-version-coverage:
+                description: 'PHP version to collect coverage on'
+                required: false
+                type: string
+                default: '8.4'
+            run-phpstan:
+                description: 'Run PHPStan analysis'
+                required: false
+                type: boolean
+                default: true
+            run-phpcs:
+                description: 'Run PHPCS coding standards check'
+                required: false
+                type: boolean
+                default: true
+            codecov-upload:
+                description: 'Upload coverage to Codecov'
+                required: false
+                type: boolean
+                default: false
+        secrets:
+            codecov-token:
+                description: 'Codecov upload token'
+                required: false
+
+jobs:
+    test:
+        name: Tests (PHP ${{ matrix.php }})
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                php: ${{ fromJson(inputs.php-versions) }}
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  coverage: ${{ matrix.php == inputs.php-version-coverage && 'pcov' || 'none' }}
+
+            - uses: actions/cache@v4
+              with:
+                  path: vendor
+                  key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+                  restore-keys: composer-${{ matrix.php }}-
+
+            - run: composer install --no-interaction --prefer-dist
+
+            - run: composer test
+              if: matrix.php != inputs.php-version-coverage
+
+            - run: composer test -- --coverage-clover=coverage.xml
+              if: matrix.php == inputs.php-version-coverage
+
+            - uses: codecov/codecov-action@v5
+              if: matrix.php == inputs.php-version-coverage && inputs.codecov-upload
+              with:
+                  files: coverage.xml
+                  token: ${{ secrets.codecov-token }}
+
+    analyse:
+        name: PHPStan
+        if: inputs.run-phpstan
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ inputs.php-version-coverage }}
+                  coverage: none
+
+            - uses: actions/cache@v4
+              with:
+                  path: vendor
+                  key: composer-${{ inputs.php-version-coverage }}-${{ hashFiles('composer.lock') }}
+                  restore-keys: composer-${{ inputs.php-version-coverage }}-
+
+            - run: composer install --no-interaction --prefer-dist
+            - run: composer analyse
+
+    cs:
+        name: Coding Standards
+        if: inputs.run-phpcs
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ inputs.php-version-coverage }}
+                  coverage: none
+
+            - uses: actions/cache@v4
+              with:
+                  path: vendor
+                  key: composer-${{ inputs.php-version-coverage }}-${{ hashFiles('composer.lock') }}
+                  restore-keys: composer-${{ inputs.php-version-coverage }}-
+
+            - run: composer install --no-interaction --prefer-dist
+            - run: composer cs

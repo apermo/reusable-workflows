@@ -1,0 +1,11 @@
+name: PR Validation
+
+on:
+    pull_request:
+        types: [opened, synchronize, reopened, edited]
+
+jobs:
+    pr-validation:
+        uses: ./.github/workflows/reusable-pr-validation.yml
+    conventional-commits:
+        uses: ./.github/workflows/reusable-conventional-commits.yml

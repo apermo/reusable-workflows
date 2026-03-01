@@ -1,0 +1,66 @@
+name: Reusable PR Validation
+
+on:
+    workflow_call:
+        inputs:
+            changelog-path:
+                description: 'Path to CHANGELOG.md'
+                required: false
+                type: string
+                default: 'CHANGELOG.md'
+
+jobs:
+    validate:
+        name: Check CHANGELOG Entry
+        runs-on: ubuntu-latest
+        outputs:
+            pr_version: ${{ steps.version.outputs.pr_version }}
+            result: ${{ steps.version.outputs.result }}
+            prerelease: ${{ steps.version.outputs.prerelease }}
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Extract version from CHANGELOG
+              id: version
+              run: |
+                  VERSION=$(grep -m1 -oP '(?<=## \[)\d+\.\d+\.\d+[^]]*' ${{ inputs.changelog-path }} || echo "")
+
+                  if [ -z "$VERSION" ]; then
+                      echo "result=no_version" >> "$GITHUB_OUTPUT"
+                      echo "::error::No version found in ${{ inputs.changelog-path }}"
+                      exit 1
+                  fi
+
+                  echo "pr_version=$VERSION" >> "$GITHUB_OUTPUT"
+
+                  if [[ "$VERSION" == *"-"* ]]; then
+                      echo "prerelease=true" >> "$GITHUB_OUTPUT"
+                  else
+                      echo "prerelease=false" >> "$GITHUB_OUTPUT"
+                  fi
+
+                  echo "result=ok" >> "$GITHUB_OUTPUT"
+                  echo "Version: $VERSION"
+
+            - name: Check CHANGELOG entry
+              if: steps.version.outputs.prerelease == 'false'
+              run: |
+                  VERSION="${{ steps.version.outputs.pr_version }}"
+                  SECTION=$(sed -n "/## \[$VERSION\]/,/## \[/p" ${{ inputs.changelog-path }} | head -n -1)
+                  CONTENT=$(echo "$SECTION" | grep -v "^#" | grep -v "^$" | head -1)
+
+                  if [ -z "$CONTENT" ]; then
+                      echo "::warning::CHANGELOG section for $VERSION appears empty"
+                  fi
+
+            - name: Comment on failure
+              if: failure()
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      github.rest.issues.createComment({
+                          issue_number: context.issue.number,
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          body: 'CHANGELOG validation failed. Please ensure ${{ inputs.changelog-path }} contains a valid version heading (`## [X.Y.Z] - YYYY-MM-DD`).'
+                      })
