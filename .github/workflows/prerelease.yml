@@ -10,3 +10,6 @@ on:
 jobs:
     prerelease:
         uses: ./.github/workflows/reusable-prerelease.yml
+        permissions:
+            contents: write
+            pull-requests: write
