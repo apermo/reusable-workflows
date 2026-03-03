@@ -7,3 +7,6 @@ on:
 jobs:
     stale:
         uses: ./.github/workflows/reusable-stale.yml
+        permissions:
+            issues: write
+            pull-requests: write
