@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Stale workflow caller missing permissions (caused startup_failure)
+- Stale and prerelease caller workflows missing permissions (caused startup_failure)
 
 ### Changed
 
