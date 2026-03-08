@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reusable WP E2E test workflow with Playwright
 - Self-referencing CI as built-in integration test
 
+### Fixed
+
+- Stale and prerelease caller workflows missing permissions (caused startup_failure)
+
 ### Changed
 
 - WP integration workflow uses `wp-phpunit/wp-phpunit` Composer package instead of SVN checkout
+- Upgrade `actions/stale` from v9 to v10
