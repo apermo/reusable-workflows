@@ -60,6 +60,7 @@ jobs:
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ inputs.node-version }}
+                  cache: npm
 
             - name: Install dependencies
               run: |
@@ -69,7 +70,7 @@ jobs:
                       npm install
                   fi
 
-            - run: npm run ${{ inputs.eslint-command }}
+            - run: npm run "${{ inputs.eslint-command }}"
 
     stylelint:
         name: Stylelint
@@ -81,6 +82,7 @@ jobs:
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ inputs.node-version }}
+                  cache: npm
 
             - name: Install dependencies
               run: |
@@ -90,7 +92,7 @@ jobs:
                       npm install
                   fi
 
-            - run: npm run ${{ inputs.stylelint-command }}
+            - run: npm run "${{ inputs.stylelint-command }}"
 
     version-check:
         name: Version consistency
@@ -114,7 +116,7 @@ jobs:
 
             - name: Generate and verify version file
               run: |
-                  composer ${{ inputs.version-command }}
+                  composer "${{ inputs.version-command }}"
                   if ! git diff --exit-code -- "${{ inputs.version-file }}"; then
                       echo "::error::${{ inputs.version-file }} is out of date. Run 'composer ${{ inputs.version-command }}' and commit the result."
                       exit 1
