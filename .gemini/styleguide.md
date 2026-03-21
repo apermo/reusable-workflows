@@ -16,7 +16,7 @@ Shared GitHub Actions reusable workflows for all apermo repositories. Each workf
 - All reusable workflows must use `workflow_call` trigger.
 - Inputs should have sensible defaults matching the apermo standard.
 - Secrets must be passed explicitly (never inherited).
-- Action versions must be pinned to major: `@v1`, `@v2`, `@v4`, `@v5`.
+- Action versions must be pinned to major (e.g. `@v4`, not `@v4.1.2` or a SHA).
 - Flag workflows missing `fail-fast: false` on test matrices.
 
 ## File Operations
