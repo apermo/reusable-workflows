@@ -14,12 +14,12 @@ on:
                 type: string
                 default: '22'
             wp-versions:
-                description: 'JSON array of WP versions (e.g. "latest", "6.7")'
+                description: 'JSON array of WP versions (e.g. "latest", "6.7"). Ignored when use-ddev is true.'
                 required: false
                 type: string
                 default: '["latest"]'
             multisite:
-                description: 'Multisite mode: "none", "both", or "only"'
+                description: 'Multisite mode: "none", "both", or "only". Ignored when use-ddev is true.'
                 required: false
                 type: string
                 default: 'none'
@@ -37,6 +37,7 @@ on:
 jobs:
     matrix-prep:
         name: Prepare matrix
+        if: ${{ !inputs.use-ddev }}
         runs-on: ubuntu-latest
         outputs:
             multisite: ${{ steps.multisite.outputs.matrix }}
@@ -51,6 +52,7 @@ jobs:
 
     e2e:
         name: WP ${{ matrix.wp }}${{ matrix.multisite && ' / multisite' || '' }}
+        if: ${{ !inputs.use-ddev }}
         needs: matrix-prep
         runs-on: ubuntu-latest
         strategy:
@@ -74,23 +76,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            # ── DDEV path ──
-            - name: Set up DDEV
-              if: inputs.use-ddev
-              uses: ddev/github-action-setup-ddev@v1
-
-            - name: Start DDEV environment
-              if: inputs.use-ddev
-              run: ddev start && ddev orchestrate
-
-            - name: Detect DDEV site URL
-              if: inputs.use-ddev
-              id: ddev-url
-              run: echo "url=$(ddev describe -j | jq -r '.raw.primary_url')" >> "$GITHUB_OUTPUT"
-
-            # ── Standard path ──
             - uses: shivammathur/setup-php@v2
-              if: ${{ !inputs.use-ddev }}
               with:
                   php-version: ${{ inputs.php-version }}
                   extensions: mysqli, intl, mbstring
@@ -98,10 +84,8 @@ jobs:
                   tools: wp-cli
 
             - run: composer install --no-interaction --prefer-dist
-              if: ${{ !inputs.use-ddev }}
 
             - name: Resolve WP version
-              if: ${{ !inputs.use-ddev }}
               id: wp-version
               run: |
                   WP_INPUT="${{ matrix.wp }}"
@@ -114,7 +98,6 @@ jobs:
                   fi
 
             - name: Set up WordPress
-              if: ${{ !inputs.use-ddev }}
               run: |
                   WP_VERSION="${{ steps.wp-version.outputs.version }}"
 
@@ -150,7 +133,6 @@ jobs:
                   fi
 
             - name: Activate project
-              if: ${{ !inputs.use-ddev }}
               run: |
                   PROJECT_NAME=$(basename "${{ github.workspace }}")
                   MODE="${{ inputs.project-mode }}"
@@ -171,21 +153,19 @@ jobs:
                   fi
 
             - name: Start PHP server
-              if: ${{ !inputs.use-ddev }}
               run: php -S 0.0.0.0:8080 -t /tmp/wordpress/ &
 
             - name: Wait for server
-              if: ${{ !inputs.use-ddev }}
               run: |
                   for i in $(seq 1 10); do
                       curl -s http://localhost:8080/ > /dev/null && break
                       sleep 1
                   done
 
-            # ── Shared steps ──
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ inputs.node-version }}
+                  cache: npm
 
             - name: Install Node.js dependencies
               run: |
@@ -201,7 +181,7 @@ jobs:
             - name: Run Playwright tests
               run: npx playwright test
               env:
-                  WP_BASE_URL: ${{ inputs.use-ddev && steps.ddev-url.outputs.url || 'http://localhost:8080' }}
+                  WP_BASE_URL: http://localhost:8080
                   WP_ADMIN_USER: admin
                   WP_ADMIN_PASSWORD: admin
 
@@ -209,6 +189,57 @@ jobs:
               if: always()
               with:
                   name: playwright-report-wp${{ matrix.wp }}${{ matrix.multisite && '-multisite' || '' }}
+                  path: |
+                      playwright-report/
+                      test-results/
+                  retention-days: 7
+
+    e2e-ddev:
+        name: E2E (DDEV)
+        if: ${{ inputs.use-ddev }}
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up DDEV
+              uses: ddev/github-action-setup-ddev@v1
+
+            - name: Start DDEV environment
+              run: ddev start && ddev orchestrate
+
+            - name: Detect DDEV site URL
+              id: ddev-url
+              run: |
+                  URL=$(ddev describe -j | jq -r '.raw.primary_url // .raw.httpurl')
+                  echo "url=${URL}" >> "$GITHUB_OUTPUT"
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ inputs.node-version }}
+                  cache: npm
+
+            - name: Install Node.js dependencies
+              run: |
+                  if [ -f package-lock.json ]; then
+                      npm ci
+                  else
+                      npm install
+                  fi
+
+            - name: Install Playwright browsers
+              run: npx playwright install --with-deps chromium
+
+            - name: Run Playwright tests
+              run: npx playwright test
+              env:
+                  WP_BASE_URL: ${{ steps.ddev-url.outputs.url }}
+                  WP_ADMIN_USER: admin
+                  WP_ADMIN_PASSWORD: admin
+
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: playwright-report-ddev
                   path: |
                       playwright-report/
                       test-results/
