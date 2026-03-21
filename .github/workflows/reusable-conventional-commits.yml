@@ -12,7 +12,7 @@ on:
                 description: 'Pipe-separated list of allowed types'
                 required: false
                 type: string
-                default: 'feat|fix|docs|style|refactor|test|chore|perf'
+                default: 'feat|fix|docs|style|refactor|test|chore|perf|ci|build'
 
 jobs:
     validate:
