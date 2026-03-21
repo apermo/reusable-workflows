@@ -28,6 +28,11 @@ on:
                 required: false
                 type: string
                 default: 'plugin'
+            use-ddev:
+                description: 'Use DDEV for WordPress setup instead of PHP built-in server'
+                required: false
+                type: boolean
+                default: false
 
 jobs:
     matrix-prep:
@@ -69,31 +74,34 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
+            # ── DDEV path ──
+            - name: Set up DDEV
+              if: inputs.use-ddev
+              uses: ddev/github-action-setup-ddev@v1
+
+            - name: Start DDEV environment
+              if: inputs.use-ddev
+              run: ddev start && ddev orchestrate
+
+            - name: Detect DDEV site URL
+              if: inputs.use-ddev
+              id: ddev-url
+              run: echo "url=$(ddev describe -j | jq -r '.raw.primary_url')" >> "$GITHUB_OUTPUT"
+
+            # ── Standard path ──
             - uses: shivammathur/setup-php@v2
+              if: ${{ !inputs.use-ddev }}
               with:
                   php-version: ${{ inputs.php-version }}
                   extensions: mysqli, intl, mbstring
                   coverage: none
                   tools: wp-cli
 
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: ${{ inputs.node-version }}
-
             - run: composer install --no-interaction --prefer-dist
-
-            - name: Install Node.js dependencies
-              run: |
-                  if [ -f package-lock.json ]; then
-                      npm ci
-                  else
-                      npm install
-                  fi
-
-            - name: Install Playwright browsers
-              run: npx playwright install --with-deps chromium
+              if: ${{ !inputs.use-ddev }}
 
             - name: Resolve WP version
+              if: ${{ !inputs.use-ddev }}
               id: wp-version
               run: |
                   WP_INPUT="${{ matrix.wp }}"
@@ -106,6 +114,7 @@ jobs:
                   fi
 
             - name: Set up WordPress
+              if: ${{ !inputs.use-ddev }}
               run: |
                   WP_VERSION="${{ steps.wp-version.outputs.version }}"
 
@@ -141,6 +150,7 @@ jobs:
                   fi
 
             - name: Activate project
+              if: ${{ !inputs.use-ddev }}
               run: |
                   PROJECT_NAME=$(basename "${{ github.workspace }}")
                   MODE="${{ inputs.project-mode }}"
@@ -161,19 +171,37 @@ jobs:
                   fi
 
             - name: Start PHP server
+              if: ${{ !inputs.use-ddev }}
               run: php -S 0.0.0.0:8080 -t /tmp/wordpress/ &
 
             - name: Wait for server
+              if: ${{ !inputs.use-ddev }}
               run: |
                   for i in $(seq 1 10); do
                       curl -s http://localhost:8080/ > /dev/null && break
                       sleep 1
                   done
 
+            # ── Shared steps ──
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ inputs.node-version }}
+
+            - name: Install Node.js dependencies
+              run: |
+                  if [ -f package-lock.json ]; then
+                      npm ci
+                  else
+                      npm install
+                  fi
+
+            - name: Install Playwright browsers
+              run: npx playwright install --with-deps chromium
+
             - name: Run Playwright tests
               run: npx playwright test
               env:
-                  WP_BASE_URL: http://localhost:8080
+                  WP_BASE_URL: ${{ inputs.use-ddev && steps.ddev-url.outputs.url || 'http://localhost:8080' }}
                   WP_ADMIN_USER: admin
                   WP_ADMIN_PASSWORD: admin
 
