@@ -37,28 +37,38 @@ on:
 jobs:
     matrix-prep:
         name: Prepare matrix
-        if: ${{ !inputs.use-ddev }}
         runs-on: ubuntu-latest
         outputs:
+            wp-versions: ${{ steps.wp.outputs.matrix }}
             multisite: ${{ steps.multisite.outputs.matrix }}
         steps:
+            - id: wp
+              run: |
+                  if [ "${{ inputs.use-ddev }}" = "true" ]; then
+                      echo "matrix=[]" >> "$GITHUB_OUTPUT"
+                  else
+                      echo "matrix=${{ inputs.wp-versions }}" >> "$GITHUB_OUTPUT"
+                  fi
             - id: multisite
               run: |
-                  case "${{ inputs.multisite }}" in
-                      both) echo "matrix=[false, true]" >> "$GITHUB_OUTPUT" ;;
-                      only) echo "matrix=[true]" >> "$GITHUB_OUTPUT" ;;
-                      *)    echo "matrix=[false]" >> "$GITHUB_OUTPUT" ;;
-                  esac
+                  if [ "${{ inputs.use-ddev }}" = "true" ]; then
+                      echo "matrix=[false]" >> "$GITHUB_OUTPUT"
+                  else
+                      case "${{ inputs.multisite }}" in
+                          both) echo "matrix=[false, true]" >> "$GITHUB_OUTPUT" ;;
+                          only) echo "matrix=[true]" >> "$GITHUB_OUTPUT" ;;
+                          *)    echo "matrix=[false]" >> "$GITHUB_OUTPUT" ;;
+                      esac
+                  fi
 
     e2e:
         name: WP ${{ matrix.wp }}${{ matrix.multisite && ' / multisite' || '' }}
-        if: ${{ !inputs.use-ddev }}
         needs: matrix-prep
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
             matrix:
-                wp: ${{ fromJson(inputs.wp-versions) }}
+                wp: ${{ fromJson(needs.matrix-prep.outputs.wp-versions) }}
                 multisite: ${{ fromJson(needs.matrix-prep.outputs.multisite) }}
         services:
             mysql:
