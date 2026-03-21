@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - Unreleased
+
+### Added
+
+- WP theme CI workflow with ESLint, Stylelint, and version consistency check (#2)
+- DDEV-based E2E testing via `use-ddev` input in WP E2E workflow (#6)
+- Labeled WP versions support in integration matrix via `{version, name}` objects (#3)
+
+### Changed
+
+- Rename integration workflow from "Reusable WP Integration" to "WP Integration"
+
 ## [0.1.1] - 2026-03-19
 
 ### Fixed
