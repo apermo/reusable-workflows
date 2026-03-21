@@ -14,12 +14,12 @@ on:
                 type: string
                 default: '22'
             wp-versions:
-                description: 'JSON array of WP versions (e.g. "latest", "6.7")'
+                description: 'JSON array of WP versions (e.g. "latest", "6.7"). Ignored when use-ddev is true.'
                 required: false
                 type: string
                 default: '["latest"]'
             multisite:
-                description: 'Multisite mode: "none", "both", or "only"'
+                description: 'Multisite mode: "none", "both", or "only". Ignored when use-ddev is true.'
                 required: false
                 type: string
                 default: 'none'
@@ -28,10 +28,16 @@ on:
                 required: false
                 type: string
                 default: 'plugin'
+            use-ddev:
+                description: 'Use DDEV for WordPress setup instead of PHP built-in server'
+                required: false
+                type: boolean
+                default: false
 
 jobs:
     matrix-prep:
         name: Prepare matrix
+        if: ${{ !inputs.use-ddev }}
         runs-on: ubuntu-latest
         outputs:
             multisite: ${{ steps.multisite.outputs.matrix }}
@@ -46,6 +52,7 @@ jobs:
 
     e2e:
         name: WP ${{ matrix.wp }}${{ matrix.multisite && ' / multisite' || '' }}
+        if: ${{ !inputs.use-ddev }}
         needs: matrix-prep
         runs-on: ubuntu-latest
         strategy:
@@ -76,22 +83,7 @@ jobs:
                   coverage: none
                   tools: wp-cli
 
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: ${{ inputs.node-version }}
-
             - run: composer install --no-interaction --prefer-dist
-
-            - name: Install Node.js dependencies
-              run: |
-                  if [ -f package-lock.json ]; then
-                      npm ci
-                  else
-                      npm install
-                  fi
-
-            - name: Install Playwright browsers
-              run: npx playwright install --with-deps chromium
 
             - name: Resolve WP version
               id: wp-version
@@ -170,6 +162,22 @@ jobs:
                       sleep 1
                   done
 
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ inputs.node-version }}
+                  cache: npm
+
+            - name: Install Node.js dependencies
+              run: |
+                  if [ -f package-lock.json ]; then
+                      npm ci
+                  else
+                      npm install
+                  fi
+
+            - name: Install Playwright browsers
+              run: npx playwright install --with-deps chromium
+
             - name: Run Playwright tests
               run: npx playwright test
               env:
@@ -181,6 +189,57 @@ jobs:
               if: always()
               with:
                   name: playwright-report-wp${{ matrix.wp }}${{ matrix.multisite && '-multisite' || '' }}
+                  path: |
+                      playwright-report/
+                      test-results/
+                  retention-days: 7
+
+    e2e-ddev:
+        name: E2E (DDEV)
+        if: ${{ inputs.use-ddev }}
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up DDEV
+              uses: ddev/github-action-setup-ddev@v1
+
+            - name: Start DDEV environment
+              run: ddev start && ddev orchestrate
+
+            - name: Detect DDEV site URL
+              id: ddev-url
+              run: |
+                  URL=$(ddev describe -j | jq -r '.raw.primary_url // .raw.httpurl')
+                  echo "url=${URL}" >> "$GITHUB_OUTPUT"
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ inputs.node-version }}
+                  cache: npm
+
+            - name: Install Node.js dependencies
+              run: |
+                  if [ -f package-lock.json ]; then
+                      npm ci
+                  else
+                      npm install
+                  fi
+
+            - name: Install Playwright browsers
+              run: npx playwright install --with-deps chromium
+
+            - name: Run Playwright tests
+              run: npx playwright test
+              env:
+                  WP_BASE_URL: ${{ steps.ddev-url.outputs.url }}
+                  WP_ADMIN_USER: admin
+                  WP_ADMIN_PASSWORD: admin
+
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: playwright-report-ddev
                   path: |
                       playwright-report/
                       test-results/

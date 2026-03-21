@@ -1,4 +1,4 @@
-name: Reusable WP Integration
+name: WP Integration
 
 on:
     workflow_call:
@@ -9,7 +9,7 @@ on:
                 type: string
                 default: '["8.3", "8.4"]'
             wp-versions:
-                description: 'JSON array of WP versions (e.g. "latest", "6.7", "6.6", "beta")'
+                description: 'JSON array of WP versions: strings or {version, name} objects'
                 required: false
                 type: string
                 default: '["latest"]'
@@ -54,7 +54,7 @@ jobs:
                   esac
 
     integration:
-        name: PHP ${{ matrix.php }} / WP ${{ matrix.wp }}${{ matrix.multisite && ' / multisite' || '' }}
+        name: PHP ${{ matrix.php }} / WP ${{ matrix.wp.name || matrix.wp }}${{ matrix.multisite && ' / multisite' || '' }}
         needs: matrix-prep
         runs-on: ubuntu-latest
         strategy:
@@ -96,7 +96,7 @@ jobs:
             - name: Resolve WP version
               id: wp-version
               run: |
-                  WP_INPUT="${{ matrix.wp }}"
+                  WP_INPUT="${{ matrix.wp.version || matrix.wp }}"
 
                   if [ "$WP_INPUT" = "latest" ]; then
                       WP_VERSION=$(curl -s https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers[0].version')

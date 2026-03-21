@@ -20,6 +20,7 @@ All reusable workflows live in `.github/workflows/` with the `reusable-` prefix.
 | `reusable-conventional-commits.yml` | Commit message format validation |
 | `reusable-prerelease.yml` | Manual prerelease from release branches |
 | `reusable-stale.yml` | Auto-close stale issues/PRs |
+| `reusable-wp-theme-ci.yml` | WP theme CI (ESLint, Stylelint, version check) |
 | `reusable-wporg-deploy.yml` | Deploy plugin/theme to WordPress.org SVN |
 
 ### Self-referencing CI

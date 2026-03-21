@@ -1,0 +1,123 @@
+name: WP Theme CI
+
+on:
+    workflow_call:
+        inputs:
+            node-version:
+                description: 'Node.js version'
+                required: false
+                type: string
+                default: '22'
+            php-version:
+                description: 'PHP version for version check'
+                required: false
+                type: string
+                default: '8.4'
+            run-eslint:
+                description: 'Run ESLint via npm'
+                required: false
+                type: boolean
+                default: true
+            eslint-command:
+                description: 'npm script for ESLint'
+                required: false
+                type: string
+                default: 'lint:js'
+            run-stylelint:
+                description: 'Run Stylelint via npm'
+                required: false
+                type: boolean
+                default: true
+            stylelint-command:
+                description: 'npm script for Stylelint'
+                required: false
+                type: string
+                default: 'lint:css'
+            run-version-check:
+                description: 'Verify generated version.php is up to date'
+                required: false
+                type: boolean
+                default: false
+            version-command:
+                description: 'Composer script to generate version file'
+                required: false
+                type: string
+                default: 'generate-version'
+            version-file:
+                description: 'Path to the generated version file'
+                required: false
+                type: string
+                default: 'version.php'
+
+jobs:
+    eslint:
+        name: ESLint
+        if: inputs.run-eslint
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ inputs.node-version }}
+                  cache: npm
+
+            - name: Install dependencies
+              run: |
+                  if [ -f package-lock.json ]; then
+                      npm ci
+                  else
+                      npm install
+                  fi
+
+            - run: npm run "${{ inputs.eslint-command }}"
+
+    stylelint:
+        name: Stylelint
+        if: inputs.run-stylelint
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ inputs.node-version }}
+                  cache: npm
+
+            - name: Install dependencies
+              run: |
+                  if [ -f package-lock.json ]; then
+                      npm ci
+                  else
+                      npm install
+                  fi
+
+            - run: npm run "${{ inputs.stylelint-command }}"
+
+    version-check:
+        name: Version consistency
+        if: inputs.run-version-check
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ inputs.php-version }}
+                  coverage: none
+
+            - uses: actions/cache@v4
+              with:
+                  path: vendor
+                  key: composer-${{ inputs.php-version }}-${{ hashFiles('composer.lock') }}
+                  restore-keys: composer-${{ inputs.php-version }}-
+
+            - run: composer install --no-interaction --prefer-dist
+
+            - name: Generate and verify version file
+              run: |
+                  composer "${{ inputs.version-command }}"
+                  if ! git diff --exit-code -- "${{ inputs.version-file }}"; then
+                      echo "::error::${{ inputs.version-file }} is out of date. Run 'composer ${{ inputs.version-command }}' and commit the result."
+                      exit 1
+                  fi
