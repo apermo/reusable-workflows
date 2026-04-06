@@ -39,13 +39,15 @@ jobs:
 
 WordPress E2E test pipeline with Playwright. Runs Chromium against a wp-env Docker environment.
 
+The environment is available at `http://localhost:8888` with the default WordPress credentials (`admin` / `password`).
+
 Caller repos must include a `.wp-env.json` in their root (see
 [wp-env docs](https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/)).
 
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
 | `node-version` | string | `"22"` | Node.js version |
-| `wp-versions` | string (JSON) | `["latest"]` | WP versions to test |
+| `wp-versions` | string (JSON) | `["latest"]` | WP versions (`"latest"`, `"6.7"`, `"beta"`) |
 | `multisite` | string | `"none"` | `"none"`, `"both"`, or `"only"` |
 
 ```yaml
