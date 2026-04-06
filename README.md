@@ -37,15 +37,16 @@ jobs:
 
 ### `reusable-wp-e2e.yml`
 
-WordPress E2E test pipeline with Playwright. Runs Chromium against a PHP built-in server serving WordPress.
+WordPress E2E test pipeline with Playwright. Runs Chromium against a wp-env Docker environment.
+
+Caller repos must include a `.wp-env.json` in their root (see
+[wp-env docs](https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/)).
 
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
-| `php-version` | string | `"8.4"` | PHP version |
 | `node-version` | string | `"22"` | Node.js version |
 | `wp-versions` | string (JSON) | `["latest"]` | WP versions to test |
 | `multisite` | string | `"none"` | `"none"`, `"both"`, or `"only"` |
-| `project-mode` | string | `"plugin"` | `"plugin"` or `"theme"` |
 
 ```yaml
 jobs:
