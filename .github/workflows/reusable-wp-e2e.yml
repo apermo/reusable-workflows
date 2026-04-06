@@ -79,7 +79,8 @@ jobs:
 
             - name: Configure wp-env override
               if: matrix.wp.core != 'null'
-              run: echo '{ "core": "${{ matrix.wp.core }}" }' > .wp-env.override.json
+              run: |
+                  echo '{ "core": "${{ matrix.wp.core }}" }' > .wp-env.override.json
 
             - name: Start wp-env
               run: npx wp-env start
