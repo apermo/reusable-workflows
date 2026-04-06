@@ -82,6 +82,13 @@ jobs:
             - name: Install wp-env
               run: npm install -g @wordpress/env
 
+            - name: Validate wp-env configuration
+              run: |
+                  if [ ! -f .wp-env.json ]; then
+                      echo "::error::Missing .wp-env.json in repository root. See https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/"
+                      exit 1
+                  fi
+
             - name: Configure wp-env override
               if: matrix.wp.core != 'null'
               run: |
@@ -100,9 +107,13 @@ jobs:
                   docker run -d --name mailpit \
                       -p 1025:1025 \
                       -p 8025:8025 \
-                      axllent/mailpit
+                      axllent/mailpit:v1
 
-                  WP_CONTAINER=$(docker ps -qf "name=wordpress" --no-trunc | head -1)
+                  WP_CONTAINER=$(docker ps -q --filter "label=com.docker.compose.service=wordpress" --no-trunc | head -1)
+                  if [ -z "$WP_CONTAINER" ]; then
+                      echo "::error::Could not find wp-env WordPress container"
+                      exit 1
+                  fi
                   WP_NETWORK=$(docker inspect -f '{{range $k, $_ := .NetworkSettings.Networks}}{{$k}} {{end}}' "$WP_CONTAINER" | awk '{print $1}')
                   docker network connect "$WP_NETWORK" mailpit
 

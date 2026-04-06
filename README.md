@@ -42,12 +42,19 @@ WordPress E2E test pipeline with Playwright. Runs Chromium against a wp-env Dock
 The environment is available at `http://localhost:8888` with the default WordPress credentials (`admin` / `password`).
 
 Caller repos must include a `.wp-env.json` in their root (see
-[wp-env docs](https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/)).
+[wp-env docs](https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/)). For example, to test the
+plugin in the current directory:
+
+```json
+{
+  "plugins": ["."]
+}
+```
 
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
 | `node-version` | string | `"22"` | Node.js version |
-| `wp-versions` | string (JSON) | `["latest"]` | WP versions (`"latest"`, `"6.7"`, `"beta"`) |
+| `wp-versions` | string (JSON) | `["latest"]` | WP versions (`"latest"`, `"6.7"`) |
 | `multisite` | string | `"none"` | `"none"`, `"both"`, or `"only"` |
 | `mailpit` | boolean | `false` | Run Mailpit mail catcher (SMTP `:1025`, API `:8025`) |
 
