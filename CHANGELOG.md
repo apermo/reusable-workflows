@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.0] - 2026-04-06
 
+### Added
+
+- `reusable-wp-e2e.yml` — optional Mailpit mail catcher via `mailpit` input
+
 ### Changed
 
 - `reusable-wp-e2e.yml` — replaced PHP built-in server and DDEV with wp-env (#14)

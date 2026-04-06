@@ -49,6 +49,7 @@ Caller repos must include a `.wp-env.json` in their root (see
 | `node-version` | string | `"22"` | Node.js version |
 | `wp-versions` | string (JSON) | `["latest"]` | WP versions (`"latest"`, `"6.7"`, `"beta"`) |
 | `multisite` | string | `"none"` | `"none"`, `"both"`, or `"only"` |
+| `mailpit` | boolean | `false` | Run Mailpit mail catcher (SMTP `:1025`, API `:8025`) |
 
 Recommended `wp-versions` setup: test against `"latest"` and the minimum supported WP version (e.g. `'["latest", "6.4"]'`).
 

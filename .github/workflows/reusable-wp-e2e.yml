@@ -18,6 +18,11 @@ on:
                 required: false
                 type: string
                 default: 'none'
+            mailpit:
+                description: 'Run Mailpit mail catcher (SMTP on :1025, UI on :8025)'
+                required: false
+                type: boolean
+                default: false
 
 jobs:
     matrix-prep:
@@ -89,6 +94,35 @@ jobs:
               if: matrix.multisite
               run: npx wp-env run cli wp core multisite-convert --title="Test Site"
 
+            - name: Start Mailpit
+              if: inputs.mailpit
+              run: |
+                  docker run -d --name mailpit \
+                      -p 1025:1025 \
+                      -p 8025:8025 \
+                      axllent/mailpit
+
+                  WP_CONTAINER=$(docker ps -qf "name=wordpress" --no-trunc | head -1)
+                  WP_NETWORK=$(docker inspect -f '{{range $k, $_ := .NetworkSettings.Networks}}{{$k}} {{end}}' "$WP_CONTAINER" | awk '{print $1}')
+                  docker network connect "$WP_NETWORK" mailpit
+
+            - name: Configure WordPress SMTP for Mailpit
+              if: inputs.mailpit
+              run: |
+                  npx wp-env run cli wp eval '
+                      $dir = ABSPATH . "wp-content/mu-plugins";
+                      if (!is_dir($dir)) { mkdir($dir, 0755, true); }
+                      file_put_contents($dir . "/mailpit-smtp.php",
+                          "<?php\nadd_action(\"phpmailer_init\", function(\$phpmailer) {\n"
+                          . "    \$phpmailer->isSMTP();\n"
+                          . "    \$phpmailer->Host = \"mailpit\";\n"
+                          . "    \$phpmailer->Port = 1025;\n"
+                          . "    \$phpmailer->SMTPAutoTLS = false;\n"
+                          . "    \$phpmailer->SMTPAuth = false;\n"
+                          . "});\n"
+                      );
+                  '
+
             - name: Install Playwright browsers
               run: npx playwright install --with-deps chromium
 
@@ -98,6 +132,7 @@ jobs:
                   WP_BASE_URL: http://localhost:8888
                   WP_ADMIN_USER: admin
                   WP_ADMIN_PASSWORD: password
+                  MAILPIT_API_URL: ${{ inputs.mailpit && 'http://localhost:8025' || '' }}
 
             - uses: actions/upload-artifact@v4
               if: always()
