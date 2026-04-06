@@ -123,6 +123,22 @@ jobs:
                       );
                   '
 
+            - name: Verify Mailpit connectivity
+              if: inputs.mailpit
+              run: |
+                  npx wp-env run cli wp eval '
+                      $f = fsockopen("mailpit", 1025, $errno, $errstr, 5);
+                      if (!$f) { echo "SMTP unreachable: $errstr ($errno)\n"; exit(1); }
+                      fclose($f);
+                      echo "SMTP OK";
+                  '
+                  npx wp-env run cli wp eval '
+                      $result = wp_mail("test@example.tld", "Smoke test", "Mailpit connectivity check");
+                      echo $result ? "wp_mail OK" : "wp_mail FAILED";
+                      if (!$result) { exit(1); }
+                  '
+                  curl -sf http://localhost:8025/api/v1/messages | jq '.total'
+
             - name: Install Playwright browsers
               run: npx playwright install --with-deps chromium
 
