@@ -113,16 +113,19 @@ jobs:
                       $dir = ABSPATH . "wp-content/mu-plugins";
                       if (!is_dir($dir)) { mkdir($dir, 0755, true); }
                       file_put_contents($dir . "/mailpit-smtp.php",
-                          "<?php\nadd_action(\"phpmailer_init\", function(\$phpmailer) {\n"
+                          "<?php\n"
+                          . "add_filter(\"wp_mail_from\", function(\$email) {\n"
+                          . "    if (strpos(\$email, \"@localhost\") !== false) {\n"
+                          . "        return \"wordpress@example.tld\";\n"
+                          . "    }\n"
+                          . "    return \$email;\n"
+                          . "});\n"
+                          . "add_action(\"phpmailer_init\", function(\$phpmailer) {\n"
                           . "    \$phpmailer->isSMTP();\n"
                           . "    \$phpmailer->Host = \"mailpit\";\n"
                           . "    \$phpmailer->Port = 1025;\n"
                           . "    \$phpmailer->SMTPAutoTLS = false;\n"
                           . "    \$phpmailer->SMTPAuth = false;\n"
-                          . "    if (strpos(\$phpmailer->From, \"localhost\") !== false) {\n"
-                          . "        \$phpmailer->From = \"wordpress@example.tld\";\n"
-                          . "        \$phpmailer->FromName = \"WordPress\";\n"
-                          . "    }\n"
                           . "});\n"
                       );
                   '
