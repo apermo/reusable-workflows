@@ -127,14 +127,21 @@ jobs:
               if: inputs.mailpit
               run: |
                   npx wp-env run cli wp eval '
-                      $f = fsockopen("mailpit", 1025, $errno, $errstr, 5);
-                      if (!$f) { echo "SMTP unreachable: $errstr ($errno)\n"; exit(1); }
-                      fclose($f);
-                      echo "SMTP OK";
-                  '
-                  npx wp-env run cli wp eval '
+                      echo "mu-plugins dir: " . WPMU_PLUGIN_DIR . "\n";
+                      echo "mu-plugin exists: " . (file_exists(WPMU_PLUGIN_DIR . "/mailpit-smtp.php") ? "yes" : "no") . "\n";
+                      echo "hook registered: " . (has_action("phpmailer_init") ? "yes" : "no") . "\n";
+
+                      add_action("wp_mail_failed", function($error) {
+                          echo "wp_mail_failed: " . $error->get_error_message() . "\n";
+                      });
+
+                      global $phpmailer;
                       $result = wp_mail("test@example.tld", "Smoke test", "Mailpit connectivity check");
-                      echo $result ? "wp_mail OK" : "wp_mail FAILED";
+                      echo $result ? "wp_mail: OK" : "wp_mail: FAILED";
+                      if (isset($phpmailer) && $phpmailer->ErrorInfo) {
+                          echo " — " . $phpmailer->ErrorInfo;
+                      }
+                      echo "\n";
                       if (!$result) { exit(1); }
                   '
                   curl -sf http://localhost:8025/api/v1/messages | jq '.total'
