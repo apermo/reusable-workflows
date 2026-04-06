@@ -109,7 +109,7 @@ jobs:
                       -p 8025:8025 \
                       axllent/mailpit:v1
 
-                  WP_CONTAINER=$(docker ps -q --filter "label=com.docker.compose.service=wordpress" --no-trunc | head -1)
+                  WP_CONTAINER=$(docker ps --format '{{.ID}}' --filter "name=wordpress" --no-trunc | head -1)
                   if [ -z "$WP_CONTAINER" ]; then
                       echo "::error::Could not find wp-env WordPress container"
                       exit 1
