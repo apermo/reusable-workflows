@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-06
+
+### Added
+
+- `reusable-wp-e2e.yml` — optional Mailpit mail catcher via `mailpit` input
+
+### Changed
+
+- `reusable-wp-e2e.yml` — replaced PHP built-in server and DDEV with wp-env (#14)
+
+### Removed
+
+- `reusable-wp-e2e.yml` — removed `php-version`, `project-mode`, and `use-ddev` inputs
+
 ## [0.2.0] - 2026-03-21
 
 ### Added
