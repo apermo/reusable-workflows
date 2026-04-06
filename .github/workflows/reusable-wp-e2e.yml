@@ -119,9 +119,15 @@ jobs:
                           . "    \$phpmailer->Port = 1025;\n"
                           . "    \$phpmailer->SMTPAutoTLS = false;\n"
                           . "    \$phpmailer->SMTPAuth = false;\n"
+                          . "    if (strpos(\$phpmailer->From, \"localhost\") !== false) {\n"
+                          . "        \$phpmailer->From = \"wordpress@example.tld\";\n"
+                          . "        \$phpmailer->FromName = \"WordPress\";\n"
+                          . "    }\n"
                           . "});\n"
                       );
                   '
+                  npx wp-env run cli wp option update siteurl http://localhost:8888
+                  npx wp-env run cli wp option update home http://localhost:8888
 
             - name: Verify Mailpit connectivity
               if: inputs.mailpit
