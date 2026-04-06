@@ -50,12 +50,14 @@ Caller repos must include a `.wp-env.json` in their root (see
 | `wp-versions` | string (JSON) | `["latest"]` | WP versions (`"latest"`, `"6.7"`, `"beta"`) |
 | `multisite` | string | `"none"` | `"none"`, `"both"`, or `"only"` |
 
+Recommended `wp-versions` setup: test against `"latest"` and the minimum supported WP version (e.g. `'["latest", "6.4"]'`).
+
 ```yaml
 jobs:
   e2e:
     uses: apermo/reusable-workflows/.github/workflows/reusable-wp-e2e.yml@main
     with:
-      wp-versions: '["latest"]'
+      wp-versions: '["latest", "6.4"]'
 ```
 
 ### `reusable-ci.yml`
