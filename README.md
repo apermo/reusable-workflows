@@ -74,7 +74,7 @@ jobs:
 Lighthouse CI audit pipeline. Runs accessibility, performance, SEO, and best-practices audits against one or more URLs.
 
 The caller workflow is responsible for having a running site before invoking this workflow, unless `setup-wp-env`
-is enabled. When `setup-wp-env` is `true`, the workflow starts a wp-env Docker environment at
+is enabled. When `setup-wp-env` is `true`, the workflow starts a `wp-env` Docker environment at
 `http://localhost:8888`.
 
 | Input | Type | Default | Description |
@@ -105,14 +105,15 @@ jobs:
 Playwright-based visual regression testing for WordPress. Captures screenshots and compares them against
 committed baselines using Playwright's built-in `toHaveScreenshot()` API.
 
-Caller repos must include a `.wp-env.json` in their root. The consuming repo's `playwright.config.ts` should
-read the `VRT_THRESHOLD`, `VRT_VIEWPORTS`, and `VRT_COLOR_SCHEMES` environment variables to configure test
-behavior. Baseline screenshots are stored in the repo (consider Git LFS for large sets).
+Caller repos must include a `.wp-env.json` in their root. The workflow starts a `wp-env` Docker environment at
+`http://localhost:8888`. The consuming repo's `playwright.config.ts` should read the `VRT_THRESHOLD`,
+`VRT_VIEWPORTS`, and `VRT_COLOR_SCHEMES` environment variables to configure test behavior. Baseline screenshots
+are stored in the repo (consider Git LFS for large sets).
 
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
 | `node-version` | string | `"22"` | Node.js version |
-| `wp-versions` | string (JSON) | `["latest"]` | WP versions (`"latest"`, `"6.7"`) |
+| `wp-versions` | string (JSON) | `["latest"]` | WP versions (`"latest"`, `"6.7"`, `"beta"`) |
 | `multisite` | string | `"none"` | `"none"`, `"both"`, or `"only"` |
 | `mailpit` | boolean | `false` | Run Mailpit mail catcher (SMTP `:1025`, API `:8025`) |
 | `update-snapshots` | boolean | `false` | Regenerate baseline screenshots |

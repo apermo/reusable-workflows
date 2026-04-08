@@ -198,6 +198,7 @@ jobs:
                   path: |
                       **/__screenshots__/
                       **/screenshots/
+                      **/*-snapshots/
                   retention-days: 7
 
             - uses: actions/upload-artifact@v4
