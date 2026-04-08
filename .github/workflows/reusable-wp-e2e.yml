@@ -23,6 +23,11 @@ on:
                 required: false
                 type: boolean
                 default: false
+            a11y:
+                description: 'Install @axe-core/playwright for accessibility testing'
+                required: false
+                type: boolean
+                default: false
 
 jobs:
     matrix-prep:
@@ -78,6 +83,10 @@ jobs:
                   else
                       npm install
                   fi
+
+            - name: Install @axe-core/playwright
+              if: inputs.a11y
+              run: npm install --no-save @axe-core/playwright
 
             - name: Install wp-env
               run: npm install -g @wordpress/env
