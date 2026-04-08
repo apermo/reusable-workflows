@@ -57,6 +57,7 @@ plugin in the current directory:
 | `wp-versions` | string (JSON) | `["latest"]` | WP versions (`"latest"`, `"6.7"`) |
 | `multisite` | string | `"none"` | `"none"`, `"both"`, or `"only"` |
 | `mailpit` | boolean | `false` | Run Mailpit mail catcher (SMTP `:1025`, API `:8025`) |
+| `a11y` | boolean | `false` | Install `@axe-core/playwright` for accessibility testing |
 
 Recommended `wp-versions` setup: test against `"latest"` and the minimum supported WP version (e.g. `'["latest", "6.4"]'`).
 
