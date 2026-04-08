@@ -59,6 +59,7 @@ jobs:
             - uses: actions/setup-node@v4
               with:
                   node-version: ${{ inputs.node-version }}
+                  cache: ${{ inputs.setup-wp-env && 'npm' || '' }}
 
             - name: Install Node.js dependencies
               if: inputs.setup-wp-env
@@ -77,7 +78,7 @@ jobs:
               if: inputs.setup-wp-env
               run: |
                   if [ ! -f .wp-env.json ]; then
-                      echo "::error::Missing .wp-env.json in repository root"
+                      echo "::error::Missing .wp-env.json in repository root. See https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/"
                       exit 1
                   fi
 
@@ -91,12 +92,12 @@ jobs:
             - name: Generate lighthouserc
               if: inputs.config-path == ''
               run: |
-                  echo '${{ inputs.urls }}' | jq \
-                      --argjson runs "${{ inputs.runs }}" \
-                      --argjson a11y "${{ inputs.a11y-threshold }}" \
-                      --argjson perf "${{ inputs.performance-threshold }}" \
-                      --argjson seo "${{ inputs.seo-threshold }}" \
-                      --argjson bp "${{ inputs.best-practices-threshold }}" \
+                  echo "$LHCI_URLS" | jq \
+                      --argjson runs "$LHCI_RUNS" \
+                      --argjson a11y "$LHCI_A11Y" \
+                      --argjson perf "$LHCI_PERF" \
+                      --argjson seo "$LHCI_SEO" \
+                      --argjson bp "$LHCI_BP" \
                       '{
                           ci: {
                               collect: {
@@ -125,6 +126,13 @@ jobs:
                   echo "::group::Generated .lighthouserc.json"
                   cat .lighthouserc.json
                   echo "::endgroup::"
+              env:
+                  LHCI_URLS: ${{ inputs.urls }}
+                  LHCI_RUNS: ${{ inputs.runs }}
+                  LHCI_A11Y: ${{ inputs.a11y-threshold }}
+                  LHCI_PERF: ${{ inputs.performance-threshold }}
+                  LHCI_SEO: ${{ inputs.seo-threshold }}
+                  LHCI_BP: ${{ inputs.best-practices-threshold }}
 
             - name: Run Lighthouse CI (generated config)
               if: inputs.config-path == ''
@@ -132,7 +140,9 @@ jobs:
 
             - name: Run Lighthouse CI (custom config)
               if: inputs.config-path != ''
-              run: lhci autorun --config="${{ inputs.config-path }}"
+              run: lhci autorun --config="$CONFIG_PATH"
+              env:
+                  CONFIG_PATH: ${{ inputs.config-path }}
 
             - uses: actions/upload-artifact@v4
               if: always()
