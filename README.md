@@ -69,6 +69,37 @@ jobs:
       wp-versions: '["latest", "6.4"]'
 ```
 
+### `reusable-lhci.yml`
+
+Lighthouse CI audit pipeline. Runs accessibility, performance, SEO, and best-practices audits against one or more URLs.
+
+The caller workflow is responsible for having a running site before invoking this workflow, unless `setup-wp-env`
+is enabled. When `setup-wp-env` is `true`, the workflow starts a wp-env Docker environment at
+`http://localhost:8888`.
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `urls` | string (JSON) | `["http://localhost:8888"]` | URLs to audit |
+| `node-version` | string | `"22"` | Node.js version |
+| `runs` | number | `3` | Lighthouse runs per URL (median is used) |
+| `setup-wp-env` | boolean | `false` | Start wp-env before running audits |
+| `a11y-threshold` | number | `90` | Minimum accessibility score (0 to skip) |
+| `performance-threshold` | number | `0` | Minimum performance score (0 to skip) |
+| `seo-threshold` | number | `0` | Minimum SEO score (0 to skip) |
+| `best-practices-threshold` | number | `0` | Minimum best practices score (0 to skip) |
+| `config-path` | string | `""` | Path to `.lighthouserc.js` (overrides thresholds) |
+
+```yaml
+jobs:
+  lighthouse:
+    uses: apermo/reusable-workflows/.github/workflows/reusable-lhci.yml@main
+    with:
+      urls: '["http://localhost:8888", "http://localhost:8888/sample-page/"]'
+      setup-wp-env: true
+      a11y-threshold: 90
+      performance-threshold: 50
+```
+
 ### `reusable-wp-visual-regression.yml`
 
 Playwright-based visual regression testing for WordPress. Captures screenshots and compares them against
