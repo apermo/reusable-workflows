@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `reusable-wp-e2e.yml` — optional `@axe-core/playwright` install via `a11y` input (#16)
+- `reusable-wp-visual-regression.yml` — visual regression testing with Playwright (#18)
 
 ## [0.3.0] - 2026-04-06
 

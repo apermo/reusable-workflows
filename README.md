@@ -69,6 +69,39 @@ jobs:
       wp-versions: '["latest", "6.4"]'
 ```
 
+### `reusable-wp-visual-regression.yml`
+
+Playwright-based visual regression testing for WordPress. Captures screenshots and compares them against
+committed baselines using Playwright's built-in `toHaveScreenshot()` API.
+
+Caller repos must include a `.wp-env.json` in their root. The consuming repo's `playwright.config.ts` should
+read the `VRT_THRESHOLD`, `VRT_VIEWPORTS`, and `VRT_COLOR_SCHEMES` environment variables to configure test
+behavior. Baseline screenshots are stored in the repo (consider Git LFS for large sets).
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `node-version` | string | `"22"` | Node.js version |
+| `wp-versions` | string (JSON) | `["latest"]` | WP versions (`"latest"`, `"6.7"`) |
+| `multisite` | string | `"none"` | `"none"`, `"both"`, or `"only"` |
+| `mailpit` | boolean | `false` | Run Mailpit mail catcher (SMTP `:1025`, API `:8025`) |
+| `update-snapshots` | boolean | `false` | Regenerate baseline screenshots |
+| `threshold` | string | `"0.2"` | Pixel diff tolerance (`maxDiffPixelRatio`) |
+| `viewports` | string (JSON) | `["desktop", "mobile"]` | Viewport presets |
+| `color-schemes` | string (JSON) | `["light"]` | Color scheme presets |
+
+To accept a visual change, update the baseline by re-running the workflow with `update-snapshots: true`, then
+download and commit the updated snapshots from the workflow artifacts.
+
+```yaml
+jobs:
+  visual-regression:
+    uses: apermo/reusable-workflows/.github/workflows/reusable-wp-visual-regression.yml@main
+    with:
+      wp-versions: '["latest"]'
+      viewports: '["desktop", "mobile"]'
+      color-schemes: '["light", "dark"]'
+```
+
 ### `reusable-ci.yml`
 
 PHP CI pipeline with configurable test matrix, PHPStan, and PHPCS.
