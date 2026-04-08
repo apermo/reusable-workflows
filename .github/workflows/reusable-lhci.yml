@@ -1,0 +1,152 @@
+name: Reusable Lighthouse CI
+
+on:
+    workflow_call:
+        inputs:
+            urls:
+                description: 'JSON array of URLs to audit (e.g. ["http://localhost:8888"])'
+                required: false
+                type: string
+                default: '["http://localhost:8888"]'
+            node-version:
+                description: 'Node.js version'
+                required: false
+                type: string
+                default: '22'
+            runs:
+                description: 'Number of Lighthouse runs per URL (median is used)'
+                required: false
+                type: number
+                default: 3
+            setup-wp-env:
+                description: 'Start wp-env before running audits'
+                required: false
+                type: boolean
+                default: false
+            a11y-threshold:
+                description: 'Minimum accessibility score (0-100, 0 to skip)'
+                required: false
+                type: number
+                default: 90
+            performance-threshold:
+                description: 'Minimum performance score (0-100, 0 to skip)'
+                required: false
+                type: number
+                default: 0
+            seo-threshold:
+                description: 'Minimum SEO score (0-100, 0 to skip)'
+                required: false
+                type: number
+                default: 0
+            best-practices-threshold:
+                description: 'Minimum best practices score (0-100, 0 to skip)'
+                required: false
+                type: number
+                default: 0
+            config-path:
+                description: 'Path to lighthouserc in the consuming repo (overrides threshold inputs)'
+                required: false
+                type: string
+                default: ''
+
+jobs:
+    lighthouse:
+        name: Lighthouse CI
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ inputs.node-version }}
+                  cache: ${{ inputs.setup-wp-env && 'npm' || '' }}
+
+            - name: Install Node.js dependencies
+              if: inputs.setup-wp-env
+              run: |
+                  if [ -f package-lock.json ]; then
+                      npm ci
+                  else
+                      npm install
+                  fi
+
+            - name: Install wp-env
+              if: inputs.setup-wp-env
+              run: npm install -g @wordpress/env
+
+            - name: Validate wp-env configuration
+              if: inputs.setup-wp-env
+              run: |
+                  if [ ! -f .wp-env.json ]; then
+                      echo "::error::Missing .wp-env.json in repository root. See https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/"
+                      exit 1
+                  fi
+
+            - name: Start wp-env
+              if: inputs.setup-wp-env
+              run: npx wp-env start
+
+            - name: Install LHCI CLI
+              run: npm install -g @lhci/cli
+
+            - name: Generate lighthouserc
+              if: inputs.config-path == ''
+              run: |
+                  echo "$LHCI_URLS" | jq \
+                      --argjson runs "$LHCI_RUNS" \
+                      --argjson a11y "$LHCI_A11Y" \
+                      --argjson perf "$LHCI_PERF" \
+                      --argjson seo "$LHCI_SEO" \
+                      --argjson bp "$LHCI_BP" \
+                      '{
+                          ci: {
+                              collect: {
+                                  url: .,
+                                  numberOfRuns: $runs,
+                                  settings: {
+                                      chromeFlags: ["--no-sandbox"]
+                                  }
+                              },
+                              assert: {
+                                  assertions: (
+                                      {}
+                                      | if $a11y > 0 then . + {"categories:accessibility": ["error", {"minScore": ($a11y / 100)}]} else . end
+                                      | if $perf > 0 then . + {"categories:performance": ["error", {"minScore": ($perf / 100)}]} else . end
+                                      | if $seo > 0 then . + {"categories:seo": ["error", {"minScore": ($seo / 100)}]} else . end
+                                      | if $bp > 0 then . + {"categories:best-practices": ["error", {"minScore": ($bp / 100)}]} else . end
+                                  )
+                              },
+                              upload: {
+                                  target: "filesystem",
+                                  outputDir: ".lighthouseci"
+                              }
+                          }
+                      }' > .lighthouserc.json
+
+                  echo "::group::Generated .lighthouserc.json"
+                  cat .lighthouserc.json
+                  echo "::endgroup::"
+              env:
+                  LHCI_URLS: ${{ inputs.urls }}
+                  LHCI_RUNS: ${{ inputs.runs }}
+                  LHCI_A11Y: ${{ inputs.a11y-threshold }}
+                  LHCI_PERF: ${{ inputs.performance-threshold }}
+                  LHCI_SEO: ${{ inputs.seo-threshold }}
+                  LHCI_BP: ${{ inputs.best-practices-threshold }}
+
+            - name: Run Lighthouse CI (generated config)
+              if: inputs.config-path == ''
+              run: lhci autorun
+
+            - name: Run Lighthouse CI (custom config)
+              if: inputs.config-path != ''
+              run: lhci autorun --config="$CONFIG_PATH"
+              env:
+                  CONFIG_PATH: ${{ inputs.config-path }}
+
+            - uses: actions/upload-artifact@v4
+              if: always()
+              with:
+                  name: lighthouse-report
+                  path: .lighthouseci/
+                  retention-days: 7
