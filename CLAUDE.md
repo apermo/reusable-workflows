@@ -29,6 +29,10 @@ All reusable workflows live in `.github/workflows/` with the `reusable-` prefix.
 
 The repo's own workflows (`pr-validation.yml`, `release.yml`, etc.) call the reusable versions via relative path. This validates that the reusable workflows work correctly on every change.
 
+### Workflow linting
+
+`pr-validation.yml` runs [actionlint](https://github.com/rhysd/actionlint) via `reviewdog/action-actionlint@v1` on every PR. Install locally with `brew install actionlint` for pre-push validation.
+
 ## Conventions
 
 - All reusable workflows use `workflow_call` trigger

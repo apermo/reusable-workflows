@@ -6,6 +6,12 @@
 
 Shared GitHub Actions reusable workflows for apermo repositories.
 
+All workflow changes in this repo are linted automatically with
+[actionlint](https://github.com/rhysd/actionlint) via
+[reviewdog/action-actionlint](https://github.com/reviewdog/action-actionlint) on every pull request.
+For local pre-push validation, install actionlint with `brew install actionlint` and run it from the
+repo root.
+
 ## Workflows
 
 ### `reusable-wp-integration.yml`
