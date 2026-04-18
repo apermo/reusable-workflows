@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Document actionlint CI integration in README and CLAUDE.md (#8)
+- Add summary job to matrix-based workflows (`ci`, `integration`, `e2e`, `visual-regression`) for stable branch protection checks (#11)
 
 ## [0.3.0] - 2026-04-06
 

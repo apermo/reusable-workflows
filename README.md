@@ -12,6 +12,21 @@ All workflow changes in this repo are linted automatically with
 For local pre-push validation, install actionlint with `brew install actionlint` and run it from the
 repo root.
 
+## Branch protection
+
+Matrix-based workflows expose a static summary check per workflow. Target these in branch protection
+rather than the individual matrix jobs — their names evaluate cleanly when skipped and don't change when
+the matrix shape changes.
+
+| Workflow | Summary check name |
+|----------|--------------------|
+| `reusable-ci.yml` | `CI` |
+| `reusable-wp-integration.yml` | `Integration` |
+| `reusable-wp-e2e.yml` | `E2E` |
+| `reusable-wp-visual-regression.yml` | `Visual Regression` |
+
+The check path is `<caller-workflow-name> / <summary-job-id> / <summary-name>`, e.g. `CI / ci-summary / CI`.
+
 ## Workflows
 
 ### `reusable-wp-integration.yml`
