@@ -11,7 +11,6 @@ on:
 
 jobs:
     validate:
-        name: Check CHANGELOG Entry
         runs-on: ubuntu-latest
         outputs:
             pr_version: ${{ steps.version.outputs.pr_version }}

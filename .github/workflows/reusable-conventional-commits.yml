@@ -16,7 +16,6 @@ on:
 
 jobs:
     validate:
-        name: Check Commit Message Format
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
