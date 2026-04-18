@@ -209,3 +209,16 @@ jobs:
                       playwright-report/
                       test-results/
                   retention-days: 7
+
+    visual-regression-summary:
+        name: Visual Regression
+        needs: visual-regression
+        if: always()
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check matrix result
+              run: |
+                  if [ "${{ needs.visual-regression.result }}" != "success" ]; then
+                      echo "::error::Visual regression matrix did not succeed (result: ${{ needs.visual-regression.result }})"
+                      exit 1
+                  fi

@@ -169,3 +169,16 @@ jobs:
                       playwright-report/
                       test-results/
                   retention-days: 7
+
+    e2e-summary:
+        name: E2E
+        needs: e2e
+        if: always()
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check matrix result
+              run: |
+                  if [ "${{ needs.e2e.result }}" != "success" ]; then
+                      echo "::error::E2E matrix did not succeed (result: ${{ needs.e2e.result }})"
+                      exit 1
+                  fi

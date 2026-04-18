@@ -114,3 +114,24 @@ jobs:
 
             - run: composer install --no-interaction --prefer-dist
             - run: composer cs
+
+    ci-summary:
+        name: CI
+        needs: [test, analyse, cs]
+        if: always()
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check job results
+              run: |
+                  if [ "${{ needs.test.result }}" != "success" ]; then
+                      echo "::error::Tests did not succeed (result: ${{ needs.test.result }})"
+                      exit 1
+                  fi
+                  if [ "${{ needs.analyse.result }}" != "success" ] && [ "${{ needs.analyse.result }}" != "skipped" ]; then
+                      echo "::error::PHPStan did not succeed (result: ${{ needs.analyse.result }})"
+                      exit 1
+                  fi
+                  if [ "${{ needs.cs.result }}" != "success" ] && [ "${{ needs.cs.result }}" != "skipped" ]; then
+                      echo "::error::PHPCS did not succeed (result: ${{ needs.cs.result }})"
+                      exit 1
+                  fi
