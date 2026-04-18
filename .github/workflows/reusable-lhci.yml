@@ -48,6 +48,11 @@ on:
                 required: false
                 type: string
                 default: ''
+            artifact-name:
+                description: 'Name for the uploaded Lighthouse report artifact'
+                required: false
+                type: string
+                default: 'lighthouse-report'
 
 jobs:
     lighthouse:
@@ -147,6 +152,6 @@ jobs:
             - uses: actions/upload-artifact@v4
               if: always()
               with:
-                  name: lighthouse-report
+                  name: ${{ inputs.artifact-name }}
                   path: .lighthouseci/
                   retention-days: 7

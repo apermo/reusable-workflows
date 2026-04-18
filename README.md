@@ -109,6 +109,7 @@ is enabled. When `setup-wp-env` is `true`, the workflow starts a `wp-env` Docker
 | `seo-threshold` | number | `0` | Minimum SEO score (0 to skip) |
 | `best-practices-threshold` | number | `0` | Minimum best practices score (0 to skip) |
 | `config-path` | string | `""` | Path to `.lighthouserc.js` (overrides thresholds) |
+| `artifact-name` | string | `"lighthouse-report"` | Name for uploaded Lighthouse report artifact |
 
 ```yaml
 jobs:
