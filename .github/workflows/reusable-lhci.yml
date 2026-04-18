@@ -90,12 +90,12 @@ jobs:
                   fi
                   patched_any=false
                   while IFS= read -r f; do
-                      if grep -qE 'COMPOSER_NO_AUDIT=1|--no-audit' "$f"; then
+                      if grep -q 'audit.block-insecure' "$f"; then
                           echo "Already patched: $f"
                           continue
                       fi
                       if grep -q 'composer global require' "$f"; then
-                          sed -i 's|composer global require|COMPOSER_NO_AUDIT=1 composer global require --no-audit|g' "$f"
+                          sed -i 's|composer global require|composer config --global audit.block-insecure false \&\& composer global require|g' "$f"
                           echo "Patched: $f"
                           patched_any=true
                       fi
