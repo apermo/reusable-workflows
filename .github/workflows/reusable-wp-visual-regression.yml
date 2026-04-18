@@ -1,4 +1,4 @@
-name: Reusable WP E2E
+name: Reusable WP Visual Regression
 
 on:
     workflow_call:
@@ -23,11 +23,26 @@ on:
                 required: false
                 type: boolean
                 default: false
-            a11y:
-                description: 'Install @axe-core/playwright for accessibility testing'
+            update-snapshots:
+                description: 'Regenerate baseline screenshots'
                 required: false
                 type: boolean
                 default: false
+            threshold:
+                description: 'Pixel diff tolerance as maxDiffPixelRatio (0-1)'
+                required: false
+                type: string
+                default: '0.2'
+            viewports:
+                description: 'JSON array of viewport presets (e.g. ["desktop", "mobile"])'
+                required: false
+                type: string
+                default: '["desktop", "mobile"]'
+            color-schemes:
+                description: 'JSON array of color scheme presets (e.g. ["light", "dark"])'
+                required: false
+                type: string
+                default: '["light"]'
 
 jobs:
     matrix-prep:
@@ -50,7 +65,7 @@ jobs:
                       *)    echo "matrix=[false]" >> "$GITHUB_OUTPUT" ;;
                   esac
 
-    e2e:
+    visual-regression:
         name: WP ${{ matrix.wp.input }}${{ matrix.multisite && ' / multisite' || '' }}
         needs: matrix-prep
         runs-on: ubuntu-latest
@@ -61,6 +76,8 @@ jobs:
                 multisite: ${{ fromJson(needs.matrix-prep.outputs.multisite) }}
         steps:
             - uses: actions/checkout@v4
+              with:
+                  lfs: true
 
             - uses: shivammathur/setup-php@v2
               with:
@@ -83,10 +100,6 @@ jobs:
                   else
                       npm install
                   fi
-
-            - name: Install @axe-core/playwright
-              if: inputs.a11y
-              run: npm install --no-save @axe-core/playwright
 
             - name: Install wp-env
               run: npm install -g @wordpress/env
@@ -153,32 +166,59 @@ jobs:
             - name: Install Playwright browsers
               run: npx playwright install --with-deps chromium
 
-            - name: Run Playwright tests
-              run: npx playwright test
+            - name: Run visual regression tests
+              run: |
+                  ARGS=""
+                  if [ "${{ inputs.update-snapshots }}" = "true" ]; then
+                      ARGS="--update-snapshots"
+                  fi
+                  npx playwright test $ARGS
               env:
                   WP_BASE_URL: http://localhost:8888
                   WP_ADMIN_USER: admin
                   WP_ADMIN_PASSWORD: password
+                  VRT_THRESHOLD: ${{ inputs.threshold }}
+                  VRT_VIEWPORTS: ${{ inputs.viewports }}
+                  VRT_COLOR_SCHEMES: ${{ inputs.color-schemes }}
                   MAILPIT_API_URL: ${{ inputs.mailpit && 'http://localhost:8025' || '' }}
+
+            - name: Upload visual diff artifacts
+              uses: actions/upload-artifact@v4
+              if: failure()
+              with:
+                  name: visual-regression-diffs-wp${{ matrix.wp.input }}${{ matrix.multisite && '-multisite' || '' }}
+                  path: test-results/
+                  retention-days: 14
+
+            - name: Upload updated snapshots
+              uses: actions/upload-artifact@v4
+              if: inputs.update-snapshots
+              with:
+                  name: updated-snapshots-wp${{ matrix.wp.input }}${{ matrix.multisite && '-multisite' || '' }}
+                  path: |
+                      **/__screenshots__/
+                      **/screenshots/
+                      **/*-snapshots/
+                  retention-days: 7
 
             - uses: actions/upload-artifact@v4
               if: always()
               with:
-                  name: playwright-report-wp${{ matrix.wp.input }}${{ matrix.multisite && '-multisite' || '' }}
+                  name: vrt-report-wp${{ matrix.wp.input }}${{ matrix.multisite && '-multisite' || '' }}
                   path: |
                       playwright-report/
                       test-results/
                   retention-days: 7
 
-    e2e-summary:
-        name: E2E
-        needs: e2e
+    visual-regression-summary:
+        name: Visual Regression
+        needs: visual-regression
         if: always()
         runs-on: ubuntu-latest
         steps:
             - name: Check matrix result
               run: |
-                  if [ "${{ needs.e2e.result }}" != "success" ]; then
-                      echo "::error::E2E matrix did not succeed (result: ${{ needs.e2e.result }})"
+                  if [ "${{ needs.visual-regression.result }}" != "success" ]; then
+                      echo "::error::Visual regression matrix did not succeed (result: ${{ needs.visual-regression.result }})"
                       exit 1
                   fi

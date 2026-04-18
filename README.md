@@ -6,6 +6,27 @@
 
 Shared GitHub Actions reusable workflows for apermo repositories.
 
+All workflow changes in this repo are linted automatically with
+[actionlint](https://github.com/rhysd/actionlint) via
+[reviewdog/action-actionlint](https://github.com/reviewdog/action-actionlint) on every pull request.
+For local pre-push validation, install actionlint with `brew install actionlint` and run it from the
+repo root.
+
+## Branch protection
+
+Matrix-based workflows expose a static summary check per workflow. Target these in branch protection
+rather than the individual matrix jobs — their names evaluate cleanly when skipped and don't change when
+the matrix shape changes.
+
+| Workflow | Summary check name |
+|----------|--------------------|
+| `reusable-ci.yml` | `CI` |
+| `reusable-wp-integration.yml` | `Integration` |
+| `reusable-wp-e2e.yml` | `E2E` |
+| `reusable-wp-visual-regression.yml` | `Visual Regression` |
+
+The check path is `<caller-workflow-name> / <summary-job-id> / <summary-name>`, e.g. `CI / ci-summary / CI`.
+
 ## Workflows
 
 ### `reusable-wp-integration.yml`
@@ -57,6 +78,7 @@ plugin in the current directory:
 | `wp-versions` | string (JSON) | `["latest"]` | WP versions (`"latest"`, `"6.7"`) |
 | `multisite` | string | `"none"` | `"none"`, `"both"`, or `"only"` |
 | `mailpit` | boolean | `false` | Run Mailpit mail catcher (SMTP `:1025`, API `:8025`) |
+| `a11y` | boolean | `false` | Install `@axe-core/playwright` for accessibility testing |
 
 Recommended `wp-versions` setup: test against `"latest"` and the minimum supported WP version (e.g. `'["latest", "6.4"]'`).
 
@@ -66,6 +88,72 @@ jobs:
     uses: apermo/reusable-workflows/.github/workflows/reusable-wp-e2e.yml@main
     with:
       wp-versions: '["latest", "6.4"]'
+```
+
+### `reusable-lhci.yml`
+
+Lighthouse CI audit pipeline. Runs accessibility, performance, SEO, and best-practices audits against one or more URLs.
+
+The caller workflow is responsible for having a running site before invoking this workflow, unless `setup-wp-env`
+is enabled. When `setup-wp-env` is `true`, the workflow starts a `wp-env` Docker environment at
+`http://localhost:8888`.
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `urls` | string (JSON) | `["http://localhost:8888"]` | URLs to audit |
+| `node-version` | string | `"22"` | Node.js version |
+| `runs` | number | `3` | Lighthouse runs per URL (median is used) |
+| `setup-wp-env` | boolean | `false` | Start wp-env before running audits |
+| `a11y-threshold` | number | `90` | Minimum accessibility score (0 to skip) |
+| `performance-threshold` | number | `0` | Minimum performance score (0 to skip) |
+| `seo-threshold` | number | `0` | Minimum SEO score (0 to skip) |
+| `best-practices-threshold` | number | `0` | Minimum best practices score (0 to skip) |
+| `config-path` | string | `""` | Path to `.lighthouserc.js` (overrides thresholds) |
+| `artifact-name` | string | `"lighthouse-report"` | Name for uploaded Lighthouse report artifact |
+
+```yaml
+jobs:
+  lighthouse:
+    uses: apermo/reusable-workflows/.github/workflows/reusable-lhci.yml@main
+    with:
+      urls: '["http://localhost:8888", "http://localhost:8888/sample-page/"]'
+      setup-wp-env: true
+      a11y-threshold: 90
+      performance-threshold: 50
+```
+
+### `reusable-wp-visual-regression.yml`
+
+Playwright-based visual regression testing for WordPress. Captures screenshots and compares them against
+committed baselines using Playwright's built-in `toHaveScreenshot()` API.
+
+Caller repos must include a `.wp-env.json` in their root. The workflow starts a `wp-env` Docker environment at
+`http://localhost:8888`. The consuming repo's `playwright.config.ts` should read the `VRT_THRESHOLD`,
+`VRT_VIEWPORTS`, and `VRT_COLOR_SCHEMES` environment variables to configure test behavior. Baseline screenshots
+are stored in the repo (consider Git LFS for large sets).
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `node-version` | string | `"22"` | Node.js version |
+| `wp-versions` | string (JSON) | `["latest"]` | WP versions (`"latest"`, `"6.7"`, `"beta"`) |
+| `multisite` | string | `"none"` | `"none"`, `"both"`, or `"only"` |
+| `mailpit` | boolean | `false` | Run Mailpit mail catcher (SMTP `:1025`, API `:8025`) |
+| `update-snapshots` | boolean | `false` | Regenerate baseline screenshots |
+| `threshold` | string | `"0.2"` | Pixel diff tolerance (`maxDiffPixelRatio`) |
+| `viewports` | string (JSON) | `["desktop", "mobile"]` | Viewport presets |
+| `color-schemes` | string (JSON) | `["light"]` | Color scheme presets |
+
+To accept a visual change, update the baseline by re-running the workflow with `update-snapshots: true`, then
+download and commit the updated snapshots from the workflow artifacts.
+
+```yaml
+jobs:
+  visual-regression:
+    uses: apermo/reusable-workflows/.github/workflows/reusable-wp-visual-regression.yml@main
+    with:
+      wp-versions: '["latest"]'
+      viewports: '["desktop", "mobile"]'
+      color-schemes: '["light", "dark"]'
 ```
 
 ### `reusable-ci.yml`

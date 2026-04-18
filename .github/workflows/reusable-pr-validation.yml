@@ -11,7 +11,6 @@ on:
 
 jobs:
     validate:
-        name: Check CHANGELOG Entry
         runs-on: ubuntu-latest
         outputs:
             pr_version: ${{ steps.version.outputs.pr_version }}
@@ -19,6 +18,8 @@ jobs:
             prerelease: ${{ steps.version.outputs.prerelease }}
         steps:
             - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
             - name: Extract version from CHANGELOG
               id: version
@@ -28,6 +29,12 @@ jobs:
                   if [ -z "$VERSION" ]; then
                       echo "result=no_version" >> "$GITHUB_OUTPUT"
                       echo "::error::No version found in ${{ inputs.changelog-path }}"
+                      exit 1
+                  fi
+
+                  if git tag -l "v$VERSION" | grep -q .; then
+                      echo "result=already_released" >> "$GITHUB_OUTPUT"
+                      echo "::error::Version $VERSION already has a git tag (v$VERSION) — add a new unreleased entry to ${{ inputs.changelog-path }}"
                       exit 1
                   fi
 

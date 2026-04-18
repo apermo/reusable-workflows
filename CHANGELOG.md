@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-08
+
+### Added
+
+- `reusable-wp-e2e.yml` — optional `@axe-core/playwright` install via `a11y` input (#16)
+- `reusable-lhci.yml` — Lighthouse CI workflow with configurable score thresholds (#17)
+- `reusable-wp-visual-regression.yml` — visual regression testing with Playwright (#18)
+
+### Fixed
+
+- `reusable-pr-validation.yml` — reject CHANGELOG versions that already have a git tag (#13)
+- `reusable-pr-validation.yml`, `reusable-conventional-commits.yml` — remove `name:` keys so branch protection matches the job ID (#12)
+
+### Changed
+
+- Document actionlint CI integration in README and CLAUDE.md (#8)
+- Add summary job to matrix-based workflows (`ci`, `integration`, `e2e`, `visual-regression`) for stable branch protection checks (#11)
+
 ## [0.3.0] - 2026-04-06
 
 ### Added

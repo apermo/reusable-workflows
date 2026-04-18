@@ -15,6 +15,8 @@ All reusable workflows live in `.github/workflows/` with the `reusable-` prefix.
 | `reusable-ci.yml` | PHP CI (test matrix, PHPStan, PHPCS) |
 | `reusable-wp-integration.yml` | WP integration tests (real WP + MySQL matrix) |
 | `reusable-wp-e2e.yml` | WP E2E tests (Playwright + wp-env) |
+| `reusable-lhci.yml` | Lighthouse CI audits (a11y, perf, SEO, best-practices) |
+| `reusable-wp-visual-regression.yml` | WP visual regression tests (Playwright screenshots) |
 | `reusable-release.yml` | CHANGELOG-driven release creation |
 | `reusable-pr-validation.yml` | CHANGELOG entry validation |
 | `reusable-conventional-commits.yml` | Commit message format validation |
@@ -26,6 +28,10 @@ All reusable workflows live in `.github/workflows/` with the `reusable-` prefix.
 ### Self-referencing CI
 
 The repo's own workflows (`pr-validation.yml`, `release.yml`, etc.) call the reusable versions via relative path. This validates that the reusable workflows work correctly on every change.
+
+### Workflow linting
+
+`pr-validation.yml` runs [actionlint](https://github.com/rhysd/actionlint) via `reviewdog/action-actionlint@v1` on every PR. Install locally with `brew install actionlint` for pre-push validation.
 
 ## Conventions
 

@@ -186,3 +186,16 @@ jobs:
               with:
                   files: coverage.xml
                   token: ${{ secrets.codecov-token }}
+
+    integration-summary:
+        name: Integration
+        needs: integration
+        if: always()
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check matrix result
+              run: |
+                  if [ "${{ needs.integration.result }}" != "success" ]; then
+                      echo "::error::Integration matrix did not succeed (result: ${{ needs.integration.result }})"
+                      exit 1
+                  fi
