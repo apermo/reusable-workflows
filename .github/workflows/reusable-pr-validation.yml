@@ -19,6 +19,8 @@ jobs:
             prerelease: ${{ steps.version.outputs.prerelease }}
         steps:
             - uses: actions/checkout@v4
+              with:
+                  fetch-tags: true
 
             - name: Extract version from CHANGELOG
               id: version
@@ -28,6 +30,12 @@ jobs:
                   if [ -z "$VERSION" ]; then
                       echo "result=no_version" >> "$GITHUB_OUTPUT"
                       echo "::error::No version found in ${{ inputs.changelog-path }}"
+                      exit 1
+                  fi
+
+                  if git tag -l "v$VERSION" | grep -q .; then
+                      echo "result=already_released" >> "$GITHUB_OUTPUT"
+                      echo "::error::Version $VERSION already has a git tag (v$VERSION) — add a new unreleased entry to ${{ inputs.changelog-path }}"
                       exit 1
                   fi
 
