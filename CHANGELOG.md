@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2026-04-18
+
+### Fixed
+
+- `reusable-wp-e2e.yml`, `reusable-wp-visual-regression.yml`, `reusable-lhci.yml` — patch the wp-env JS source (`docker-config.js`) instead of searching for static Dockerfiles. wp-env generates Dockerfiles at runtime under `~/.wp-env/` as `*.Dockerfile`, so the 0.4.1/0.4.2 find-and-sed approach never matched. (#24, [WordPress/gutenberg#77470](https://github.com/WordPress/gutenberg/issues/77470))
+
 ## [0.4.2] - 2026-04-18
 
 ### Fixed

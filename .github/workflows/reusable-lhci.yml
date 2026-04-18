@@ -79,29 +79,21 @@ jobs:
               if: inputs.setup-wp-env
               run: npm install -g @wordpress/env
 
-            - name: Patch wp-env Dockerfile for Composer 2.8 advisory block
+            - name: Patch wp-env source for Composer 2.8 advisory block
               if: inputs.setup-wp-env
               run: |
-                  WP_ENV_PATH="$(npm root -g)/@wordpress/env"
-                  DOCKERFILES=$(find "$WP_ENV_PATH" -type f -name 'Dockerfile*')
-                  if [ -z "$DOCKERFILES" ]; then
-                      echo "::warning::No wp-env Dockerfile found — upstream may have moved it. See https://github.com/WordPress/gutenberg/issues/77470"
+                  DOCKER_CONFIG="$(npm root -g)/@wordpress/env/lib/runtime/docker/docker-config.js"
+                  if [ ! -f "$DOCKER_CONFIG" ]; then
+                      echo "::warning::wp-env docker-config.js not found — upstream may have moved it. See https://github.com/WordPress/gutenberg/issues/77470"
                       exit 0
                   fi
-                  patched_any=false
-                  while IFS= read -r f; do
-                      if grep -q 'audit.block-insecure' "$f"; then
-                          echo "Already patched: $f"
-                          continue
-                      fi
-                      if grep -q 'composer global require' "$f"; then
-                          sed -i 's|composer global require|composer config --global audit.block-insecure false \&\& composer global require|g' "$f"
-                          echo "Patched: $f"
-                          patched_any=true
-                      fi
-                  done <<< "$DOCKERFILES"
-                  if [ "$patched_any" = false ]; then
-                      echo "::warning::No wp-env Dockerfile required patching — upstream may have changed. See https://github.com/WordPress/gutenberg/issues/77470"
+                  if grep -q 'audit.block-insecure' "$DOCKER_CONFIG"; then
+                      echo "Already patched: $DOCKER_CONFIG"
+                  elif grep -q 'RUN composer global require' "$DOCKER_CONFIG"; then
+                      sed -i 's|RUN composer global require|RUN composer config --global audit.block-insecure false \&\& composer global require|g' "$DOCKER_CONFIG"
+                      echo "Patched: $DOCKER_CONFIG"
+                  else
+                      echo "::warning::No 'RUN composer global require' found in $DOCKER_CONFIG — upstream may have changed. See https://github.com/WordPress/gutenberg/issues/77470"
                   fi
 
             - name: Validate wp-env configuration
