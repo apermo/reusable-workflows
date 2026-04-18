@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `reusable-lhci.yml` — Lighthouse CI workflow with configurable score thresholds (#17)
 - `reusable-wp-visual-regression.yml` — visual regression testing with Playwright (#18)
 
+### Fixed
+
+- `reusable-pr-validation.yml` — reject CHANGELOG versions that already have a git tag (#13)
+- `reusable-pr-validation.yml`, `reusable-conventional-commits.yml` — remove `name:` keys so branch protection matches the job ID (#12)
+
+### Changed
+
+- Document actionlint CI integration in README and CLAUDE.md (#8)
+
 ## [0.3.0] - 2026-04-06
 
 ### Added
