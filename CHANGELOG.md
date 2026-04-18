@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-04-18
+
+### Fixed
+
+- `reusable-wp-e2e.yml`, `reusable-wp-visual-regression.yml`, `reusable-lhci.yml` — patch wp-env Dockerfile to disable Composer 2.8 advisory blocking on PHPUnit install ([WordPress/gutenberg#77470](https://github.com/WordPress/gutenberg/issues/77470))
+
 ## [0.4.0] - 2026-04-08
 
 ### Added
