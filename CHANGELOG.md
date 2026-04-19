@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-04-19
+
+### Added
+
+- `reusable-plugin-check.yml` — WordPress Plugin Check runner wrapping [`wordpress/plugin-check-action@v1`](https://github.com/WordPress/plugin-check-action). Exposes the 11 most commonly tuned inputs and sets `permissions: contents: read` at the job level. (#27)
+
 ## [0.4.3] - 2026-04-18
 
 ### Fixed
