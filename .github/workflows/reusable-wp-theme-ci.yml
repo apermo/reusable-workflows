@@ -49,6 +49,9 @@ on:
                 type: string
                 default: 'version.php'
 
+permissions:
+    contents: read
+
 jobs:
     eslint:
         name: ESLint
