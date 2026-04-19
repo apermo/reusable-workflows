@@ -29,6 +29,9 @@ on:
                 type: boolean
                 default: false
 
+permissions:
+    contents: read
+
 jobs:
     matrix-prep:
         name: Prepare matrix
