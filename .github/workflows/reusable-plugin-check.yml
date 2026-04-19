@@ -59,12 +59,13 @@ on:
                 type: boolean
                 default: false
 
+permissions:
+    contents: read
+
 jobs:
     plugin-check:
         name: Plugin Check
         runs-on: ubuntu-latest
-        permissions:
-            contents: read
         steps:
             - uses: actions/checkout@v4
 
