@@ -164,7 +164,7 @@ violations as GitHub file annotations. Intended for plugins targeting the wordpr
 
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
-| `wp-version` | string | `"latest"` | WordPress version to test against |
+| `wp-version` | string | `"latest"` | WordPress version (`"latest"` or `"trunk"`; upstream only special-cases `trunk`) |
 | `build-dir` | string | `"./"` | Plugin build directory |
 | `checks` | string | `""` | Only run specific checks (comma-separated) |
 | `exclude-checks` | string | `""` | Checks to exclude (comma-separated) |
