@@ -156,6 +156,34 @@ jobs:
       color-schemes: '["light", "dark"]'
 ```
 
+### `reusable-plugin-check.yml`
+
+WordPress [Plugin Check](https://wordpress.org/plugins/plugin-check/) runner. Wraps
+[`wordpress/plugin-check-action@v1`](https://github.com/WordPress/plugin-check-action) and reports guideline
+violations as GitHub file annotations. Intended for plugins targeting the wordpress.org plugin directory.
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `wp-version` | string | `"latest"` | WordPress version (`"latest"` or `"trunk"`; upstream only special-cases `trunk`) |
+| `build-dir` | string | `"./"` | Plugin build directory |
+| `checks` | string | `""` | Only run specific checks (comma-separated) |
+| `exclude-checks` | string | `""` | Checks to exclude (comma-separated) |
+| `categories` | string | `""` | Limit checks to specific categories (comma-separated) |
+| `exclude-files` | string | `""` | Files to exclude (comma-separated) |
+| `exclude-directories` | string | `""` | Directories to exclude (comma-separated) |
+| `ignore-codes` | string | `""` | Error codes to ignore (comma-separated) |
+| `ignore-warnings` | boolean | `false` | Ignore warnings |
+| `ignore-errors` | boolean | `false` | Ignore errors |
+| `include-experimental` | boolean | `false` | Include experimental checks |
+
+```yaml
+jobs:
+  plugin-check:
+    uses: apermo/reusable-workflows/.github/workflows/reusable-plugin-check.yml@main
+    with:
+      wp-version: latest
+```
+
 ### `reusable-ci.yml`
 
 PHP CI pipeline with configurable test matrix, PHPStan, and PHPCS.

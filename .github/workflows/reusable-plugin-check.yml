@@ -1,0 +1,85 @@
+name: WP Plugin Check
+
+on:
+    workflow_call:
+        inputs:
+            wp-version:
+                description: 'WordPress version to test against'
+                required: false
+                type: string
+                default: 'latest'
+            build-dir:
+                description: 'Plugin build directory'
+                required: false
+                type: string
+                default: './'
+            checks:
+                description: 'Only run specific checks (comma-separated)'
+                required: false
+                type: string
+                default: ''
+            exclude-checks:
+                description: 'Checks to exclude (comma-separated)'
+                required: false
+                type: string
+                default: ''
+            categories:
+                description: 'Limit checks to specific categories (comma-separated)'
+                required: false
+                type: string
+                default: ''
+            exclude-files:
+                description: 'Files to exclude from checks (comma-separated)'
+                required: false
+                type: string
+                default: ''
+            exclude-directories:
+                description: 'Directories to exclude from checks (comma-separated)'
+                required: false
+                type: string
+                default: ''
+            ignore-codes:
+                description: 'Error codes to ignore (comma-separated)'
+                required: false
+                type: string
+                default: ''
+            ignore-warnings:
+                description: 'Ignore warnings'
+                required: false
+                type: boolean
+                default: false
+            ignore-errors:
+                description: 'Ignore errors'
+                required: false
+                type: boolean
+                default: false
+            include-experimental:
+                description: 'Include experimental checks'
+                required: false
+                type: boolean
+                default: false
+
+permissions:
+    contents: read
+
+jobs:
+    plugin-check:
+        name: Plugin Check
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: wordpress/plugin-check-action@v1
+              with:
+                  repo-token: ${{ github.token }}
+                  wp-version: ${{ inputs.wp-version }}
+                  build-dir: ${{ inputs.build-dir }}
+                  checks: ${{ inputs.checks }}
+                  exclude-checks: ${{ inputs.exclude-checks }}
+                  categories: ${{ inputs.categories }}
+                  exclude-files: ${{ inputs.exclude-files }}
+                  exclude-directories: ${{ inputs.exclude-directories }}
+                  ignore-codes: ${{ inputs.ignore-codes }}
+                  ignore-warnings: ${{ inputs.ignore-warnings }}
+                  ignore-errors: ${{ inputs.ignore-errors }}
+                  include-experimental: ${{ inputs.include-experimental }}

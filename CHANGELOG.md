@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-04-19
+
+### Added
+
+- `reusable-plugin-check.yml` — WordPress Plugin Check runner wrapping [`wordpress/plugin-check-action@v1`](https://github.com/WordPress/plugin-check-action). Exposes the 11 most commonly tuned inputs. (#27)
+
+### Changed
+
+- `reusable-ci.yml`, `reusable-wp-integration.yml`, `reusable-wp-e2e.yml`, `reusable-wp-visual-regression.yml`, `reusable-wp-theme-ci.yml`, `reusable-lhci.yml`, `reusable-plugin-check.yml` — declare explicit `permissions: contents: read` at the workflow level. Defense-in-depth: the reusables now scope their own `GITHUB_TOKEN` instead of inheriting whatever the caller grants. (#28)
+
 ## [0.4.3] - 2026-04-18
 
 ### Fixed

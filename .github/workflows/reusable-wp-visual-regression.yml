@@ -44,6 +44,9 @@ on:
                 type: string
                 default: '["light"]'
 
+permissions:
+    contents: read
+
 jobs:
     matrix-prep:
         name: Prepare matrix

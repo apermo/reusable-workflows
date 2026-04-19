@@ -38,6 +38,9 @@ on:
                 description: 'Codecov upload token'
                 required: false
 
+permissions:
+    contents: read
+
 jobs:
     matrix-prep:
         name: Prepare matrix
