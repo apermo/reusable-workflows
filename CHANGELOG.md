@@ -9,7 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `reusable-wp-e2e.yml`, `reusable-wp-visual-regression.yml`, `reusable-lhci.yml` — remove the `docker-config.js` sed-patch shipped in 0.4.1–0.4.3. The upstream advisory metadata that blocked Composer 2.8 resolution of PHPUnit 11 was corrected in [FriendsOfPHP/security-advisories#762](https://github.com/FriendsOfPHP/security-advisories/pull/762) (merged 2026-04-18), which is the feed Composer consults. The workaround is no longer needed; see [WordPress/gutenberg#77472](https://github.com/WordPress/gutenberg/pull/77472) for the matching upstream revert.
+- `reusable-wp-e2e.yml`, `reusable-wp-visual-regression.yml`, `reusable-lhci.yml` — remove the `docker-config.js`
+  sed-patch shipped in 0.4.1–0.4.3. The upstream advisory metadata that blocked Composer 2.8 resolution of
+  PHPUnit 11 was corrected in
+  [FriendsOfPHP/security-advisories#762](https://github.com/FriendsOfPHP/security-advisories/pull/762)
+  (merged 2026-04-18), which is the feed Composer consults. The workaround is no longer needed; see
+  [WordPress/gutenberg#77472](https://github.com/WordPress/gutenberg/pull/77472) for the matching upstream revert.
 
 ## [0.5.0] - 2026-04-19
 
