@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-05-01
+
+### Changed
+
+- `reusable-stale.yml` — **breaking**: replace generic `days-before-stale` / `days-before-close` inputs with four
+  per-type inputs so issues and PRs can have different timeouts. New inputs:
+  `days-before-issue-stale` (default 30), `days-before-issue-close` (default 14),
+  `days-before-pr-stale` (default 60), `days-before-pr-close` (default 21). PR defaults are roughly twice the issue
+  grace period since an open PR represents in-flight work. Callers that pass the old input names must rename them.
+
 ## [0.5.1] - 2026-04-20
 
 ### Fixed

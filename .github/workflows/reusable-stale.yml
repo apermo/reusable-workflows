@@ -3,16 +3,26 @@ name: Reusable Stale
 on:
     workflow_call:
         inputs:
-            days-before-stale:
-                description: 'Days before marking as stale'
+            days-before-issue-stale:
+                description: 'Days of inactivity before marking an issue as stale'
                 required: false
                 type: number
                 default: 30
-            days-before-close:
-                description: 'Days before closing stale items'
+            days-before-issue-close:
+                description: 'Days after stale before closing an issue'
                 required: false
                 type: number
                 default: 14
+            days-before-pr-stale:
+                description: 'Days of inactivity before marking a PR as stale'
+                required: false
+                type: number
+                default: 60
+            days-before-pr-close:
+                description: 'Days after stale before closing a PR'
+                required: false
+                type: number
+                default: 21
             exempt-labels:
                 description: 'Comma-separated exempt labels'
                 required: false
@@ -29,8 +39,10 @@ jobs:
         steps:
             - uses: actions/stale@v10
               with:
-                  days-before-stale: ${{ inputs.days-before-stale }}
-                  days-before-close: ${{ inputs.days-before-close }}
+                  days-before-issue-stale: ${{ inputs.days-before-issue-stale }}
+                  days-before-issue-close: ${{ inputs.days-before-issue-close }}
+                  days-before-pr-stale: ${{ inputs.days-before-pr-stale }}
+                  days-before-pr-close: ${{ inputs.days-before-pr-close }}
                   stale-issue-label: stale
                   stale-pr-label: stale
                   exempt-issue-labels: ${{ inputs.exempt-labels }}
