@@ -275,8 +275,10 @@ Auto-closes stale issues and PRs.
 
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
-| `days-before-stale` | number | `30` | Days before marking stale |
-| `days-before-close` | number | `14` | Days before closing |
+| `days-before-issue-stale` | number | `30` | Days of inactivity before marking an issue as stale |
+| `days-before-issue-close` | number | `14` | Days after stale before closing an issue |
+| `days-before-pr-stale` | number | `60` | Days of inactivity before marking a PR as stale |
+| `days-before-pr-close` | number | `21` | Days after stale before closing a PR |
 | `exempt-labels` | string | `pinned,security,in-progress` | Exempt labels |
 
 ```yaml
