@@ -46,7 +46,7 @@ jobs:
                           continue
                       fi
 
-                      if ! echo "$MSG" | grep -qP "^(${ALLOWED_TYPES})(\(.+\))?: .{1,}$"; then
+                      if ! echo "$MSG" | grep -qP "^(${ALLOWED_TYPES})(\(.+\))?!?: .{1,}$"; then
                           echo "::error::Invalid commit message: $MSG ($HASH)"
                           FAILED=1
                       fi
