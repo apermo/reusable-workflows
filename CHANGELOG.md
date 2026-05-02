@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-05-02
+
+### Fixed
+
+- `reusable-conventional-commits.yml` — skip the default message that `git revert` generates
+  (`Revert "<original subject>"`) the same way merge commits are skipped. Previously the
+  validator rejected reverts and forced contributors to hand-edit the message into the
+  conventional schema, which dropped the `Revert "` prefix that release-please and similar
+  tools rely on to group reverts. Hand-written `revert: …` / `revert(scope): …` subjects are
+  still validated against `allowed-types`. (#33)
+
 ## [0.6.1] - 2026-05-01
 
 ### Fixed
