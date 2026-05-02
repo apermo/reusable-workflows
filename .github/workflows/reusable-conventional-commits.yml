@@ -41,8 +41,8 @@ jobs:
                       HASH=$(echo "$line" | cut -d' ' -f1)
                       MSG=$(echo "$line" | cut -d' ' -f2-)
 
-                      # Skip merge commits
-                      if [[ "$MSG" == Merge* ]]; then
+                      # Skip messages git itself generates (merges, reverts).
+                      if [[ "$MSG" == Merge* || "$MSG" == Revert\ \"* ]]; then
                           continue
                       fi
 
