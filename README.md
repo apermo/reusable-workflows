@@ -220,6 +220,10 @@ CHANGELOG-driven release automation. Extracts version from CHANGELOG.md, creates
 |-------|------|---------|-------------|
 | `changelog-path` | string | `CHANGELOG.md` | Path to changelog |
 
+| Secret | Required | Description |
+|--------|----------|-------------|
+| `release-token` | No | Override for `GITHUB_TOKEN`. Pass a PAT or GitHub App installation token when downstream `release` / `push: tags` workflows on the calling repo need to fire on the created release (GitHub's `GITHUB_TOKEN` loop-prevention suppresses them otherwise). |
+
 ```yaml
 jobs:
   release:
@@ -275,11 +279,11 @@ Auto-closes stale issues and PRs.
 
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
-| `days-before-issue-stale` | number | `30` | Days of inactivity before marking an issue as stale |
-| `days-before-issue-close` | number | `14` | Days after stale before closing an issue |
-| `days-before-pr-stale` | number | `60` | Days of inactivity before marking a PR as stale |
-| `days-before-pr-close` | number | `21` | Days after stale before closing a PR |
-| `exempt-labels` | string | `pinned,security,in-progress` | Exempt labels |
+| `days-before-issue-stale` | number | `60` | Days of inactivity before marking an issue as stale |
+| `days-before-issue-close` | number | `30` | Days after stale before closing an issue |
+| `days-before-pr-stale` | number | `30` | Days of inactivity before marking a PR as stale |
+| `days-before-pr-close` | number | `30` | Days after stale before closing a PR |
+| `exempt-labels` | string | `pinned,security,in-progress,approved,refined,keep` | Exempt labels |
 
 ```yaml
 jobs:
