@@ -108,6 +108,7 @@ jobs:
               with:
                   php-version: ${{ inputs.php-version }}
                   coverage: none
+                  tools: composer:^2.9.8
 
             - uses: actions/cache@v4
               with:

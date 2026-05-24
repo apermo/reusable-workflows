@@ -87,6 +87,7 @@ jobs:
                   php-version: ${{ matrix.php }}
                   extensions: mysqli, intl, mbstring
                   coverage: ${{ matrix.php == inputs.php-version-coverage && 'pcov' || 'none' }}
+                  tools: composer:^2.9.8
 
             - uses: actions/cache@v4
               with:

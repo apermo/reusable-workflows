@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-05-24
+
+### Added
+
+- `reusable-release.yml` — optional `release-token` secret. Defaults to
+  `GITHUB_TOKEN`; pass a PAT or GitHub App installation token so downstream
+  `release` / `push: tags` workflows on the calling repo fire on the created
+  release (GitHub's `GITHUB_TOKEN` loop-prevention suppresses them otherwise).
+  Backwards-compatible — callers that don't pass the secret are unaffected. (#35)
+
+### Changed
+
+- `reusable-stale.yml` — rebalance default day thresholds and broaden exempt labels.
+  - Issues now go stale after 60 days (was 30) and close 30 days later (was 14)
+    — total 90-day idle window before closure (was 44).
+  - PRs go stale faster (30 days, was 60) but get a longer grace period before
+    closing (30 days, was 21) — total 60-day window before closure (was 81).
+    Shifts the bias from "let PRs linger forever" to "ping authors sooner, then
+    give them a full month to respond".
+  - `exempt-labels` default extended with `approved`, `refined`, `keep` so
+    triaged items don't get culled.
+
+  All four day-count inputs and the `exempt-labels` input remain overridable
+  per-repo via `with:` if a project needs different settings.
+
+### Security
+
+- `reusable-ci.yml`, `reusable-wp-e2e.yml`, `reusable-wp-integration.yml`,
+  `reusable-wp-theme-ci.yml`, `reusable-wp-visual-regression.yml`,
+  `reusable-wporg-deploy.yml` — pin `tools: composer:^2.9.8` on every
+  `shivammathur/setup-php@v2` step. Defends against future regressions of
+  [GHSA-f9f8-rm49-7jv2](https://github.com/advisories/GHSA-f9f8-rm49-7jv2)
+  (Composer ≤ 2.9.7 leaked GitHub Actions tokens to stderr when validating
+  new-format tokens containing hyphens). No functional change today —
+  `setup-php@v2` already installs latest stable Composer; the pin makes the
+  minimum explicit. (#36)
+
 ## [0.6.2] - 2026-05-02
 
 ### Fixed
@@ -148,3 +185,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - WP integration workflow uses `wp-phpunit/wp-phpunit` Composer package instead of SVN checkout
 - Upgrade `actions/stale` from v9 to v10
+
+[0.7.0]: https://github.com/apermo/reusable-workflows/compare/v0.6.2...v0.7.0

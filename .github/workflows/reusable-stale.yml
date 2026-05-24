@@ -7,27 +7,27 @@ on:
                 description: 'Days of inactivity before marking an issue as stale'
                 required: false
                 type: number
-                default: 30
+                default: 60
             days-before-issue-close:
                 description: 'Days after stale before closing an issue'
                 required: false
                 type: number
-                default: 14
+                default: 30
             days-before-pr-stale:
                 description: 'Days of inactivity before marking a PR as stale'
                 required: false
                 type: number
-                default: 60
+                default: 30
             days-before-pr-close:
                 description: 'Days after stale before closing a PR'
                 required: false
                 type: number
-                default: 21
+                default: 30
             exempt-labels:
                 description: 'Comma-separated exempt labels'
                 required: false
                 type: string
-                default: 'pinned,security,in-progress'
+                default: 'pinned,security,in-progress,approved,refined,keep'
 
 jobs:
     stale:

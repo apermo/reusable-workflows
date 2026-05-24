@@ -55,6 +55,7 @@ jobs:
               with:
                   php-version: ${{ matrix.php }}
                   coverage: ${{ matrix.php == inputs.php-version-coverage && 'pcov' || 'none' }}
+                  tools: composer:^2.9.8
 
             - uses: actions/cache@v4
               with:
@@ -87,6 +88,7 @@ jobs:
               with:
                   php-version: ${{ inputs.php-version-coverage }}
                   coverage: none
+                  tools: composer:^2.9.8
 
             - uses: actions/cache@v4
               with:
@@ -108,6 +110,7 @@ jobs:
               with:
                   php-version: ${{ inputs.php-version-coverage }}
                   coverage: none
+                  tools: composer:^2.9.8
 
             - uses: actions/cache@v4
               with:
