@@ -69,6 +69,7 @@ jobs:
               with:
                   php-version: '8.4'
                   coverage: none
+                  tools: composer:^2.9.8
 
             - name: Install Composer dependencies
               if: hashFiles('composer.json') != ''
