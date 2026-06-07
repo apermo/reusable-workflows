@@ -101,11 +101,13 @@ jobs:
             # plugin before wp-env starts. Skipped when the script is absent so
             # plugins/themes without a build step are unaffected.
             - name: Build assets
+              env:
+                  BUILD_COMMAND: ${{ inputs.build-command }}
               run: |
-                  if jq -e --arg s "${{ inputs.build-command }}" '.scripts[$s]' package.json >/dev/null 2>&1; then
-                      npm run "${{ inputs.build-command }}"
+                  if jq -e --arg s "$BUILD_COMMAND" '.scripts[$s]' package.json >/dev/null 2>&1; then
+                      npm run "$BUILD_COMMAND"
                   else
-                      echo "No '${{ inputs.build-command }}' npm script; skipping asset build."
+                      echo "No '$BUILD_COMMAND' npm script; skipping asset build."
                   fi
 
             - name: Install wp-env

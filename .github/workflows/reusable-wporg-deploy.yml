@@ -64,23 +64,25 @@ jobs:
               if: hashFiles('package.json') != ''
               with:
                   node-version: ${{ inputs.node-version }}
-                  cache: npm
+                  cache: ${{ hashFiles('package-lock.json') != '' && 'npm' || '' }}
 
             # Compile Gutenberg blocks / assets so the deployed plugin ships a
             # populated build/ dir. Skipped when there is no package.json or the
             # script is absent so non-JS plugins/themes are unaffected.
             - name: Build assets
               if: hashFiles('package.json') != ''
+              env:
+                  BUILD_COMMAND: ${{ inputs.build-command }}
               run: |
                   if [ -f package-lock.json ]; then
                       npm ci
                   else
                       npm install
                   fi
-                  if jq -e --arg s "${{ inputs.build-command }}" '.scripts[$s]' package.json >/dev/null 2>&1; then
-                      npm run "${{ inputs.build-command }}"
+                  if jq -e --arg s "$BUILD_COMMAND" '.scripts[$s]' package.json >/dev/null 2>&1; then
+                      npm run "$BUILD_COMMAND"
                   else
-                      echo "No '${{ inputs.build-command }}' npm script; skipping asset build."
+                      echo "No '$BUILD_COMMAND' npm script; skipping asset build."
                   fi
 
             - name: Deploy to WordPress.org
