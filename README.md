@@ -232,7 +232,15 @@ jobs:
 
 ### `reusable-pr-validation.yml`
 
-Validates CHANGELOG entries on pull requests.
+Validates the top `CHANGELOG.md` version heading on pull requests. Merging is decoupled
+from releasing: a PR only needs a valid heading when it intends to release.
+
+| Top heading | Result | Behavior |
+|-------------|--------|----------|
+| Missing, `## [Unreleased]`, or non-version label | `no_version` | **Passes** — merge without release |
+| Valid `## [X.Y.Z] - YYYY-MM-DD`, already tagged | `already_released` | **Passes** — merge without release |
+| Valid `## [X.Y.Z] - YYYY-MM-DD`, untagged | `ok` | **Passes** — releases on merge |
+| Looks like a version but isn't valid SemVer / missing date | `malformed` | **Fails** |
 
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -243,6 +251,10 @@ jobs:
   pr-validation:
     uses: apermo/reusable-workflows/.github/workflows/reusable-pr-validation.yml@main
 ```
+
+**Migration note:** PRs without a version bump now merge without releasing. Add a new
+`## [X.Y.Z] - YYYY-MM-DD` heading to cut a release on merge; the only hard failure is a
+malformed version heading.
 
 ### `reusable-conventional-commits.yml`
 
