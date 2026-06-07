@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-06-07
+
+### Changed
+
+- `reusable-pr-validation.yml` — decouple merging from releasing. A missing,
+  `## [Unreleased]`, or already-tagged top heading now **passes** (merge without
+  release) instead of hard-failing; only a malformed version heading (looks like a
+  version but isn't valid SemVer, or missing the ` - YYYY-MM-DD` date) fails. A new
+  untagged `## [X.Y.Z] - YYYY-MM-DD` still triggers a release on merge.
+  `reusable-release.yml` is unchanged — its existing tag-existence skip already gates
+  releases on a version bump. (#39)
+
 ## [0.7.0] - 2026-05-24
 
 ### Added
