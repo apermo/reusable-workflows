@@ -16,6 +16,16 @@ on:
                 description: 'Path to build directory (false to skip build copy)'
                 required: false
                 type: string
+            node-version:
+                description: 'Node.js version for the asset build'
+                required: false
+                type: string
+                default: '22'
+            build-command:
+                description: 'npm script that compiles assets/blocks before deploy (skipped if package.json or the script is absent)'
+                required: false
+                type: string
+                default: 'build'
             generate-zip:
                 description: 'Generate a zip file as build artifact'
                 required: false
@@ -49,6 +59,29 @@ jobs:
 
             - name: Install production dependencies
               run: composer install --no-dev --no-interaction --prefer-dist
+
+            - uses: actions/setup-node@v4
+              if: hashFiles('package.json') != ''
+              with:
+                  node-version: ${{ inputs.node-version }}
+                  cache: npm
+
+            # Compile Gutenberg blocks / assets so the deployed plugin ships a
+            # populated build/ dir. Skipped when there is no package.json or the
+            # script is absent so non-JS plugins/themes are unaffected.
+            - name: Build assets
+              if: hashFiles('package.json') != ''
+              run: |
+                  if [ -f package-lock.json ]; then
+                      npm ci
+                  else
+                      npm install
+                  fi
+                  if jq -e --arg s "${{ inputs.build-command }}" '.scripts[$s]' package.json >/dev/null 2>&1; then
+                      npm run "${{ inputs.build-command }}"
+                  else
+                      echo "No '${{ inputs.build-command }}' npm script; skipping asset build."
+                  fi
 
             - name: Deploy to WordPress.org
               uses: 10up/action-wordpress-plugin-deploy@stable

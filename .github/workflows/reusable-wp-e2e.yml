@@ -28,6 +28,11 @@ on:
                 required: false
                 type: boolean
                 default: false
+            build-command:
+                description: 'npm script that compiles assets/blocks before wp-env starts (skipped if the script is absent)'
+                required: false
+                type: string
+                default: 'build'
 
 permissions:
     contents: read
@@ -91,6 +96,17 @@ jobs:
             - name: Install @axe-core/playwright
               if: inputs.a11y
               run: npm install --no-save @axe-core/playwright
+
+            # Compile Gutenberg blocks / assets so they exist in the live-mounted
+            # plugin before wp-env starts. Skipped when the script is absent so
+            # plugins/themes without a build step are unaffected.
+            - name: Build assets
+              run: |
+                  if jq -e --arg s "${{ inputs.build-command }}" '.scripts[$s]' package.json >/dev/null 2>&1; then
+                      npm run "${{ inputs.build-command }}"
+                  else
+                      echo "No '${{ inputs.build-command }}' npm script; skipping asset build."
+                  fi
 
             - name: Install wp-env
               run: npm install -g @wordpress/env

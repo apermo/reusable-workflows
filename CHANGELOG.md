@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-06-07
+
+### Added
+
+- `reusable-wp-e2e.yml` — `build-command` input (default `build`). Compiles
+  Gutenberg blocks/assets via `npm run <build-command>` after `npm ci` and before
+  wp-env starts, so block E2E specs see compiled blocks. Skipped when the named
+  npm script is absent, so non-block plugins/themes are unaffected. (#44)
+- `reusable-wporg-deploy.yml` — `node-version` (default `22`) and `build-command`
+  (default `build`) inputs. Runs `npm ci && npm run <build-command>` before deploy
+  so the shipped plugin includes a compiled `build/`. Skipped when there is no
+  `package.json` or the named script is absent. (#44)
+
+### Fixed
+
+- `reusable-plugin-check.yml` — no longer fails on repos that commit a `.wp-env.json`
+  (required by `reusable-wp-e2e.yml`). `plugin-check-action` only provisions its own
+  wp-env when none exists; a repo one made it skip setup and die with "Environment not
+  initialized". The repo `.wp-env.json`/`.wp-env.override.json` are now moved aside for
+  the run and restored afterwards. (#44)
+
 ## [0.8.0] - 2026-06-07
 
 ### Changed
