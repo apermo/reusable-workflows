@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **BREAKING:** `reusable-conventional-commits.yml` — default `max-length` lowered from
+  `72` to `50` to match the org-wide commit-message standard (50-char subject, 72-char
+  body wrap). Caller repos that relied on the implicit 72 limit and have subjects longer
+  than 50 chars will start failing; pass `with: max-length: 72` to keep the previous
+  behavior. The `template-wordpress` `.husky/commit-msg` `MAX` should be lowered to 50 in
+  lock-step (tracked separately). (#38)
+
 ## [0.10.0] - 2026-06-08
 
 ### Changed
