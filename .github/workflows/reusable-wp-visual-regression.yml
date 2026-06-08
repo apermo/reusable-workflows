@@ -78,7 +78,7 @@ jobs:
                 wp: ${{ fromJson(needs.matrix-prep.outputs.wp-versions) }}
                 multisite: ${{ fromJson(needs.matrix-prep.outputs.multisite) }}
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
               with:
                   lfs: true
 
@@ -92,7 +92,7 @@ jobs:
               if: hashFiles('composer.json') != ''
               run: composer install --no-interaction --prefer-dist
 
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v5
               with:
                   node-version: ${{ inputs.node-version }}
                   cache: npm
@@ -187,7 +187,7 @@ jobs:
                   MAILPIT_API_URL: ${{ inputs.mailpit && 'http://localhost:8025' || '' }}
 
             - name: Upload visual diff artifacts
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v5
               if: failure()
               with:
                   name: visual-regression-diffs-wp${{ matrix.wp.input }}${{ matrix.multisite && '-multisite' || '' }}
@@ -195,7 +195,7 @@ jobs:
                   retention-days: 14
 
             - name: Upload updated snapshots
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v5
               if: inputs.update-snapshots
               with:
                   name: updated-snapshots-wp${{ matrix.wp.input }}${{ matrix.multisite && '-multisite' || '' }}
@@ -205,7 +205,7 @@ jobs:
                       **/*-snapshots/
                   retention-days: 7
 
-            - uses: actions/upload-artifact@v4
+            - uses: actions/upload-artifact@v5
               if: always()
               with:
                   name: vrt-report-wp${{ matrix.wp.input }}${{ matrix.multisite && '-multisite' || '' }}
