@@ -229,4 +229,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - WP integration workflow uses `wp-phpunit/wp-phpunit` Composer package instead of SVN checkout
 - Upgrade `actions/stale` from v9 to v10
 
+[0.10.0]: https://github.com/apermo/reusable-workflows/compare/v0.9.0...v0.10.0
+[0.9.0]: https://github.com/apermo/reusable-workflows/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/apermo/reusable-workflows/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/apermo/reusable-workflows/compare/v0.6.2...v0.7.0
