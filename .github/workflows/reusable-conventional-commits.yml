@@ -7,7 +7,7 @@ on:
                 description: 'Maximum subject line length'
                 required: false
                 type: number
-                default: 72
+                default: 50
             allowed-types:
                 description: 'Pipe-separated list of allowed types'
                 required: false

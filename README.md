@@ -302,8 +302,8 @@ Validates commit messages follow the Conventional Commits specification.
 
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
-| `max-length` | number | `72` | Max subject line length |
-| `allowed-types` | string | `feat\|fix\|docs\|style\|refactor\|test\|chore\|perf` | Allowed types |
+| `max-length` | number | `50` | Max subject line length |
+| `allowed-types` | string | `feat\|fix\|docs\|style\|refactor\|test\|chore\|perf\|ci\|build` | Allowed types |
 
 ```yaml
 jobs:
