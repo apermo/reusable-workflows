@@ -79,6 +79,10 @@ plugin in the current directory:
 | `multisite` | string | `"none"` | `"none"`, `"both"`, or `"only"` |
 | `mailpit` | boolean | `false` | Run Mailpit mail catcher (SMTP `:1025`, API `:8025`) |
 | `a11y` | boolean | `false` | Install `@axe-core/playwright` for accessibility testing |
+| `build-command` | string | `"build"` | npm script that compiles assets/blocks before wp-env starts (skipped if absent) |
+
+Block-based plugins/themes are built before wp-env starts (default `npm run build`) so compiled blocks
+are present when specs run. The step is skipped when no matching npm script exists.
 
 Recommended `wp-versions` setup: test against `"latest"` and the minimum supported WP version (e.g. `'["latest", "6.4"]'`).
 
@@ -162,6 +166,9 @@ WordPress [Plugin Check](https://wordpress.org/plugins/plugin-check/) runner. Wr
 [`wordpress/plugin-check-action@v1`](https://github.com/WordPress/plugin-check-action) and reports guideline
 violations as GitHub file annotations. Intended for plugins targeting the wordpress.org plugin directory.
 
+A repo-provided `.wp-env.json` or `.wp-env.override.json` (required by `reusable-wp-e2e.yml`) is moved aside for
+the run and restored afterwards, so `plugin-check-action` provisions its own environment instead of failing on it.
+
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
 | `wp-version` | string | `"latest"` | WordPress version (`"latest"` or `"trunk"`; upstream only special-cases `trunk`) |
@@ -182,6 +189,39 @@ jobs:
     uses: apermo/reusable-workflows/.github/workflows/reusable-plugin-check.yml@main
     with:
       wp-version: latest
+```
+
+### `reusable-wporg-deploy.yml`
+
+Deploys a plugin or theme to the WordPress.org SVN repository. Wraps
+[`10up/action-wordpress-plugin-deploy`](https://github.com/10up/action-wordpress-plugin-deploy). When a
+`package.json` is present it runs `npm ci && npm run <build-command>` before deploy, so block-based plugins ship a
+compiled `build/`. The build step is skipped when there is no `package.json` or the named npm script is absent.
+
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `slug` | string | repo name | WordPress.org plugin/theme slug |
+| `assets-dir` | string | `".wordpress-org"` | Path to WordPress.org assets (banners, icons, screenshots) |
+| `build-dir` | string | `""` | Path to build directory (`false` to skip build copy) |
+| `node-version` | string | `"22"` | Node.js version for the asset build |
+| `build-command` | string | `"build"` | npm script that compiles assets/blocks before deploy (skipped if absent) |
+| `generate-zip` | boolean | `false` | Generate a zip file as build artifact |
+| `dry-run` | boolean | `false` | Run without committing to SVN |
+
+| Secret | Required | Description |
+|--------|----------|-------------|
+| `svn-username` | Yes | WordPress.org SVN username |
+| `svn-password` | Yes | WordPress.org SVN password |
+
+```yaml
+jobs:
+  deploy:
+    uses: apermo/reusable-workflows/.github/workflows/reusable-wporg-deploy.yml@main
+    with:
+      slug: my-plugin
+    secrets:
+      svn-username: ${{ secrets.WPORG_SVN_USERNAME }}
+      svn-password: ${{ secrets.WPORG_SVN_PASSWORD }}
 ```
 
 ### `reusable-ci.yml`

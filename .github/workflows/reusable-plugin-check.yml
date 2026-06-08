@@ -69,6 +69,25 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
+            # plugin-check-action provisions its own wp-env (plugin-check plugin,
+            # port mapping, plugin slug) only when no .wp-env.json is present. A repo
+            # one (required by reusable-wp-e2e.yml) makes the action skip its setup and
+            # then die on "Environment not initialized". Move it aside for the run.
+            - name: Hide repo wp-env config
+              id: hide-wp-env
+              run: |
+                  moved=
+                  for f in .wp-env.json .wp-env.override.json; do
+                      if [ -f "$f" ]; then
+                          mv "$f" "$f.plugin-check-bak"
+                          moved="$moved $f"
+                      fi
+                  done
+                  if [ -n "$moved" ]; then
+                      echo "::notice::Moved repo wp-env config aside for plugin-check:$moved"
+                      echo "moved=true" >> "$GITHUB_OUTPUT"
+                  fi
+
             - uses: wordpress/plugin-check-action@v1
               with:
                   repo-token: ${{ github.token }}
@@ -83,3 +102,12 @@ jobs:
                   ignore-warnings: ${{ inputs.ignore-warnings }}
                   ignore-errors: ${{ inputs.ignore-errors }}
                   include-experimental: ${{ inputs.include-experimental }}
+
+            - name: Restore repo wp-env config
+              if: always() && steps.hide-wp-env.outputs.moved == 'true'
+              run: |
+                  for f in .wp-env.json .wp-env.override.json; do
+                      if [ -f "$f.plugin-check-bak" ]; then
+                          mv "$f.plugin-check-bak" "$f"
+                      fi
+                  done
