@@ -68,7 +68,7 @@ jobs:
                 wp: ${{ fromJson(needs.matrix-prep.outputs.wp-versions) }}
                 multisite: ${{ fromJson(needs.matrix-prep.outputs.multisite) }}
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - uses: shivammathur/setup-php@v2
               with:
@@ -80,7 +80,7 @@ jobs:
               if: hashFiles('composer.json') != ''
               run: composer install --no-interaction --prefer-dist
 
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v5
               with:
                   node-version: ${{ inputs.node-version }}
                   cache: npm
@@ -183,7 +183,7 @@ jobs:
                   WP_ADMIN_PASSWORD: password
                   MAILPIT_API_URL: ${{ inputs.mailpit && 'http://localhost:8025' || '' }}
 
-            - uses: actions/upload-artifact@v4
+            - uses: actions/upload-artifact@v5
               if: always()
               with:
                   name: playwright-report-wp${{ matrix.wp.input }}${{ matrix.multisite && '-multisite' || '' }}

@@ -49,7 +49,7 @@ jobs:
             matrix:
                 php: ${{ fromJson(inputs.php-versions) }}
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - uses: shivammathur/setup-php@v2
               with:
@@ -57,7 +57,7 @@ jobs:
                   coverage: ${{ matrix.php == inputs.php-version-coverage && 'pcov' || 'none' }}
                   tools: composer:^2.9.8
 
-            - uses: actions/cache@v4
+            - uses: actions/cache@v5
               with:
                   path: vendor
                   key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
@@ -82,7 +82,7 @@ jobs:
         if: inputs.run-phpstan
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - uses: shivammathur/setup-php@v2
               with:
@@ -90,7 +90,7 @@ jobs:
                   coverage: none
                   tools: composer:^2.9.8
 
-            - uses: actions/cache@v4
+            - uses: actions/cache@v5
               with:
                   path: vendor
                   key: composer-${{ inputs.php-version-coverage }}-${{ hashFiles('composer.lock') }}
@@ -104,7 +104,7 @@ jobs:
         if: inputs.run-phpcs
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - uses: shivammathur/setup-php@v2
               with:
@@ -112,7 +112,7 @@ jobs:
                   coverage: none
                   tools: composer:^2.9.8
 
-            - uses: actions/cache@v4
+            - uses: actions/cache@v5
               with:
                   path: vendor
                   key: composer-${{ inputs.php-version-coverage }}-${{ hashFiles('composer.lock') }}
