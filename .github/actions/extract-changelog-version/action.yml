@@ -1,0 +1,111 @@
+name: Extract CHANGELOG version
+description: >-
+    Selects and validates the release version from a Keep-a-Changelog file. Single source of truth
+    shared by reusable-pr-validation, reusable-release, and reusable-prerelease so their version
+    selection cannot diverge. Pure classifier — never fails the job; callers apply policy to result.
+
+inputs:
+    changelog-path:
+        description: 'Path to CHANGELOG.md'
+        required: false
+        default: 'CHANGELOG.md'
+
+outputs:
+    result:
+        description: 'no_version | malformed | already_released | ok'
+        value: ${{ steps.extract.outputs.result }}
+    version:
+        description: 'Full version string (e.g. 1.2.3 or 1.2.3-beta.1); empty unless ok/already_released'
+        value: ${{ steps.extract.outputs.version }}
+    base_version:
+        description: 'Version without prerelease/build suffix (e.g. 1.2.3)'
+        value: ${{ steps.extract.outputs.base_version }}
+    tag:
+        description: 'Release tag (v + version); empty unless ok/already_released'
+        value: ${{ steps.extract.outputs.tag }}
+    prerelease:
+        description: 'true when the version carries a prerelease suffix'
+        value: ${{ steps.extract.outputs.prerelease }}
+
+runs:
+    using: composite
+    steps:
+        - id: extract
+          shell: bash
+          env:
+              CHANGELOG_PATH: ${{ inputs.changelog-path }}
+          run: |
+              set -euo pipefail
+
+              result=no_version
+              version=
+              base_version=
+              tag=
+              prerelease=false
+
+              emit() {
+                  {
+                      echo "result=$result"
+                      echo "version=$version"
+                      echo "base_version=$base_version"
+                      echo "tag=$tag"
+                      echo "prerelease=$prerelease"
+                  } >> "$GITHUB_OUTPUT"
+              }
+
+              # Phase 1: first "## [ ... ]" heading whose label is not "Unreleased".
+              HEADING=$(grep -oP '^##\s+\[\K[^\]]+\](.*)$' "$CHANGELOG_PATH" \
+                  | grep -viP '^Unreleased\]' | head -n1 || true)
+
+              if [ -z "$HEADING" ]; then
+                  echo "No release version heading found — merge without release."
+                  emit
+                  exit 0
+              fi
+
+              LABEL="${HEADING%%]*}"
+              REST="${HEADING#*]}"
+
+              # A heading with no digit is prose (e.g. "[Yanked]"), not a botched release.
+              if ! printf '%s' "$LABEL" | grep -qP '[0-9]'; then
+                  echo "Top heading '[$LABEL]' is not a version — merge without release."
+                  emit
+                  exit 0
+              fi
+
+              # Strict SemVer 2.0.0 + Keep-a-Changelog date.
+              SEMVER='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
+              DATE_RE='^[[:space:]]*-[[:space:]]+[0-9]{4}-[0-9]{2}-[0-9]{2}'
+
+              if ! printf '%s' "$LABEL" | grep -qP "$SEMVER"; then
+                  result=malformed
+                  echo "::error::Malformed version heading '[$LABEL]' in $CHANGELOG_PATH — expected '## [X.Y.Z] - YYYY-MM-DD' (SemVer)."
+                  emit
+                  exit 0
+              fi
+
+              if ! printf '%s' "$REST" | grep -qP "$DATE_RE"; then
+                  result=malformed
+                  echo "::error::Version heading '[$LABEL]' in $CHANGELOG_PATH is missing a valid ' - YYYY-MM-DD' date."
+                  emit
+                  exit 0
+              fi
+
+              version="$LABEL"
+              base_version=$(printf '%s' "$version" | grep -oP '^[0-9]+\.[0-9]+\.[0-9]+')
+              tag="v$version"
+              if [[ "$version" == *"-"* ]]; then
+                  prerelease=true
+              fi
+
+              # Requires the caller checkout to have fetched tags (fetch-depth: 0 / fetch-tags).
+              if git tag -l "$tag" | grep -q .; then
+                  result=already_released
+                  echo "$tag already tagged — merge without release."
+                  emit
+                  exit 0
+              fi
+
+              result=ok
+              echo "Version: $version (new release)"
+              emit
