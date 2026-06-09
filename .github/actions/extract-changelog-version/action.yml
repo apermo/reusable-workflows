@@ -53,38 +53,50 @@ runs:
                   } >> "$GITHUB_OUTPUT"
               }
 
-              # Phase 1: first "## [ ... ]" heading whose label is not "Unreleased".
-              HEADING=$(grep -oP '^##\s+\[\K[^\]]+\](.*)$' "$CHANGELOG_PATH" \
-                  | grep -viP '^Unreleased\]' | head -n1 || true)
+              if [ ! -f "$CHANGELOG_PATH" ]; then
+                  echo "Changelog not found at '$CHANGELOG_PATH' — merge without release."
+                  emit
+                  exit 0
+              fi
 
-              if [ -z "$HEADING" ]; then
+              # Strict SemVer 2.0.0 + Keep-a-Changelog date (POSIX ERE — bash =~).
+              SEMVER='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
+              DATE_RE='^[[:space:]]*-[[:space:]]+[0-9]{4}-[0-9]{2}-[0-9]{2}'
+
+              # Phase 1: first "## [ ... ]" heading whose label is not "Unreleased".
+              LABEL=
+              REST=
+              while IFS= read -r line || [ -n "$line" ]; do
+                  if [[ "$line" =~ ^##[[:space:]]+\[([^]]+)\](.*)$ ]]; then
+                      candidate="${BASH_REMATCH[1]}"
+                      [ "${candidate,,}" = "unreleased" ] && continue
+                      LABEL="$candidate"
+                      REST="${BASH_REMATCH[2]}"
+                      break
+                  fi
+              done < "$CHANGELOG_PATH"
+
+              if [ -z "$LABEL" ]; then
                   echo "No release version heading found — merge without release."
                   emit
                   exit 0
               fi
 
-              LABEL="${HEADING%%]*}"
-              REST="${HEADING#*]}"
-
               # A heading with no digit is prose (e.g. "[Yanked]"), not a botched release.
-              if ! printf '%s' "$LABEL" | grep -qP '[0-9]'; then
+              if [[ ! "$LABEL" =~ [0-9] ]]; then
                   echo "Top heading '[$LABEL]' is not a version — merge without release."
                   emit
                   exit 0
               fi
 
-              # Strict SemVer 2.0.0 + Keep-a-Changelog date.
-              SEMVER='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
-              DATE_RE='^[[:space:]]*-[[:space:]]+[0-9]{4}-[0-9]{2}-[0-9]{2}'
-
-              if ! printf '%s' "$LABEL" | grep -qP "$SEMVER"; then
+              if [[ ! "$LABEL" =~ $SEMVER ]]; then
                   result=malformed
                   echo "::error::Malformed version heading '[$LABEL]' in $CHANGELOG_PATH — expected '## [X.Y.Z] - YYYY-MM-DD' (SemVer)."
                   emit
                   exit 0
               fi
 
-              if ! printf '%s' "$REST" | grep -qP "$DATE_RE"; then
+              if [[ ! "$REST" =~ $DATE_RE ]]; then
                   result=malformed
                   echo "::error::Version heading '[$LABEL]' in $CHANGELOG_PATH is missing a valid ' - YYYY-MM-DD' date."
                   emit
@@ -92,7 +104,9 @@ runs:
               fi
 
               version="$LABEL"
-              base_version=$(printf '%s' "$version" | grep -oP '^[0-9]+\.[0-9]+\.[0-9]+')
+              if [[ "$version" =~ ^([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+                  base_version="${BASH_REMATCH[1]}"
+              fi
               tag="v$version"
               if [[ "$version" == *"-"* ]]; then
                   prerelease=true
