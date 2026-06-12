@@ -18,7 +18,7 @@ outputs:
         description: 'Full version string (e.g. 1.2.3 or 1.2.3-beta.1); empty unless ok/already_released'
         value: ${{ steps.extract.outputs.version }}
     base_version:
-        description: 'Version without prerelease/build suffix (e.g. 1.2.3)'
+        description: 'Version without prerelease/build suffix (e.g. 1.2.3); empty unless ok/already_released'
         value: ${{ steps.extract.outputs.base_version }}
     tag:
         description: 'Release tag (v + version); empty unless ok/already_released'
