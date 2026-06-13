@@ -4,15 +4,18 @@ description: >-
     shared by reusable-pr-validation, reusable-release, and reusable-prerelease so their version
     selection cannot diverge. Pure classifier — never fails the job; callers apply policy to result.
 
-# Usage — reference by FULL path from a reusable workflow. A relative "./" path would
-# resolve against the *caller* repo's checkout, not this one, so it must be the owner/repo
-# form. The caller's checkout must fetch tags for the already_released result to work:
+# Usage. The reusable-* workflows in THIS repo reference the action by relative path
+# (`uses: ./.github/actions/extract-changelog-version`) — GitHub resolves it against this
+# repo, and a same-repo `owner/repo/...@ref` reference is rejected from a reusable workflow.
+# An external repo using the action DIRECTLY (not via the reusable workflows) uses the full
+# path: `apermo/reusable-workflows/.github/actions/extract-changelog-version@<ref>`.
+# Either way the caller must checkout with fetch-depth: 0 so the already_released tag check works:
 #
 #     - uses: actions/checkout@v5
 #       with:
 #           fetch-depth: 0
 #     - id: version
-#       uses: apermo/reusable-workflows/.github/actions/extract-changelog-version@main
+#       uses: ./.github/actions/extract-changelog-version
 #     # ... then branch on steps.version.outputs.result (ok | already_released | no_version | malformed)
 
 inputs:

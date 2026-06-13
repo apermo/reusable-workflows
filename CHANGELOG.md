@@ -12,11 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `extract-changelog-version` composite action — single source of truth for selecting and
   validating the release version from `CHANGELOG.md` (first non-`Unreleased` heading, strict
   SemVer 2.0.0 + ` - YYYY-MM-DD` date). Emits `result`/`version`/`base_version`/`tag`/`prerelease`.
-  Not yet wired into the reusable workflows — that follows in a second PR so the `@main` reference
-  resolves. Groundwork for unifying the three divergent extractors. (#43)
+  (#43)
 
 ### Changed
 
+- `reusable-pr-validation.yml`, `reusable-release.yml`, and `reusable-prerelease.yml` now extract
+  the CHANGELOG version via the shared `extract-changelog-version` action instead of three
+  divergent inline implementations, so their version selection can no longer diverge (the
+  `## [Yanked]`-over-an-untagged-version case now resolves consistently to "no release"). (#43)
+- **BREAKING:** `reusable-prerelease.yml` now requires a strict `## [X.Y.Z] - YYYY-MM-DD` heading;
+  it previously accepted an undated `## [X.Y.Z]`. A prerelease cut from a release branch whose top
+  entry is undated will now fail — add the date, or open an issue to relax the prerelease path.
+  Relatedly, `reusable-release.yml` now fails loudly on a malformed top heading instead of silently
+  skipping (pr-validation should catch it pre-merge). (#43)
 - **BREAKING:** `reusable-conventional-commits.yml` — default `max-length` lowered from
   `72` to `50` to match the org-wide commit-message standard (50-char subject, 72-char
   body wrap). Caller repos that relied on the implicit 72 limit and have subjects longer

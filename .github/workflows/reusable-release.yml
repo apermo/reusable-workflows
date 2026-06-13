@@ -33,38 +33,20 @@ jobs:
 
             - name: Extract version from CHANGELOG
               id: version
-              run: |
-                  VERSION=$(grep -m1 -oP '(?<=## \[)\d+\.\d+\.\d+[^]]*' ${{ inputs.changelog-path }} || echo "")
+              uses: ./.github/actions/extract-changelog-version
+              with:
+                  changelog-path: ${{ inputs.changelog-path }}
 
-                  if [ -z "$VERSION" ]; then
-                      echo "skip=true" >> "$GITHUB_OUTPUT"
-                      echo "No version found, skipping release."
-                      exit 0
-                  fi
-
-                  TAG="v$VERSION"
-
-                  if git tag -l "$TAG" | grep -q "$TAG"; then
-                      echo "skip=true" >> "$GITHUB_OUTPUT"
-                      echo "Tag $TAG already exists, skipping."
-                      exit 0
-                  fi
-
-                  echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-                  echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-                  echo "skip=false" >> "$GITHUB_OUTPUT"
-
-                  if [[ "$VERSION" == *"-"* ]]; then
-                      echo "prerelease=true" >> "$GITHUB_OUTPUT"
-                  else
-                      echo "prerelease=false" >> "$GITHUB_OUTPUT"
-                  fi
+            # ok => release; no_version/already_released => skip; malformed => fail loudly
+            # (pr-validation should have caught it pre-merge).
+            - name: Fail on malformed CHANGELOG
+              if: steps.version.outputs.result == 'malformed'
+              run: exit 1
 
             - name: Delete old prerelease artifacts on final release
-              if: steps.version.outputs.skip == 'false' && steps.version.outputs.prerelease == 'false'
+              if: steps.version.outputs.result == 'ok' && steps.version.outputs.prerelease == 'false'
               run: |
-                  BASE_VERSION=$(echo "${{ steps.version.outputs.version }}" | grep -oP '^\d+\.\d+\.\d+')
-                  for tag in $(git tag -l "v${BASE_VERSION}-*"); do
+                  for tag in $(git tag -l "v${{ steps.version.outputs.base_version }}-*"); do
                       echo "Deleting prerelease tag: $tag"
                       gh release delete "$tag" --yes --cleanup-tag || true
                   done
@@ -72,7 +54,7 @@ jobs:
                   GH_TOKEN: ${{ secrets.release-token || secrets.GITHUB_TOKEN }}
 
             - name: Create release
-              if: steps.version.outputs.skip == 'false'
+              if: steps.version.outputs.result == 'ok'
               run: |
                   PRERELEASE_FLAG=""
                   if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then
@@ -87,7 +69,7 @@ jobs:
                   GH_TOKEN: ${{ secrets.release-token || secrets.GITHUB_TOKEN }}
 
             - name: Comment on merged PR
-              if: steps.version.outputs.skip == 'false'
+              if: steps.version.outputs.result == 'ok'
               uses: actions/github-script@v8
               with:
                   github-token: ${{ secrets.release-token || secrets.GITHUB_TOKEN }}

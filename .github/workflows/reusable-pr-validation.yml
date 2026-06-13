@@ -13,7 +13,7 @@ jobs:
     validate:
         runs-on: ubuntu-latest
         outputs:
-            pr_version: ${{ steps.version.outputs.pr_version }}
+            pr_version: ${{ steps.version.outputs.version }}
             result: ${{ steps.version.outputs.result }}
             prerelease: ${{ steps.version.outputs.prerelease }}
         steps:
@@ -23,67 +23,19 @@ jobs:
 
             - name: Extract version from CHANGELOG
               id: version
-              run: |
-                  CHANGELOG="${{ inputs.changelog-path }}"
+              uses: ./.github/actions/extract-changelog-version
+              with:
+                  changelog-path: ${{ inputs.changelog-path }}
 
-                  # Phase 1: first "## [ ... ]" heading whose label is not "Unreleased".
-                  HEADING=$(grep -oP '^##\s+\[\K[^\]]+\](.*)$' "$CHANGELOG" \
-                      | grep -viP '^Unreleased\]' | head -n1 || true)
-
-                  if [ -z "$HEADING" ]; then
-                      echo "result=no_version" >> "$GITHUB_OUTPUT"
-                      echo "No release version heading found — merge without release."
-                      exit 0
-                  fi
-
-                  VERSION="${HEADING%%]*}"
-                  REST="${HEADING#*]}"
-
-                  # A heading with no digit is prose, not a botched release.
-                  if ! printf '%s' "$VERSION" | grep -qP '[0-9]'; then
-                      echo "result=no_version" >> "$GITHUB_OUTPUT"
-                      echo "Top heading '[$VERSION]' is not a version — merge without release."
-                      exit 0
-                  fi
-
-                  # Phase 2: strict SemVer 2.0.0 + Keep-a-Changelog date.
-                  SEMVER='^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'
-                  DATE_RE='^[[:space:]]*-[[:space:]]+[0-9]{4}-[0-9]{2}-[0-9]{2}'
-
-                  if ! printf '%s' "$VERSION" | grep -qP "$SEMVER"; then
-                      echo "result=malformed" >> "$GITHUB_OUTPUT"
-                      echo "::error::Malformed version heading '[$VERSION]' in $CHANGELOG — expected '## [X.Y.Z] - YYYY-MM-DD' (SemVer)."
-                      exit 1
-                  fi
-
-                  if ! printf '%s' "$REST" | grep -qP "$DATE_RE"; then
-                      echo "result=malformed" >> "$GITHUB_OUTPUT"
-                      echo "::error::Version heading '[$VERSION]' in $CHANGELOG is missing a valid ' - YYYY-MM-DD' date."
-                      exit 1
-                  fi
-
-                  if git tag -l "v$VERSION" | grep -q .; then
-                      echo "pr_version=$VERSION" >> "$GITHUB_OUTPUT"
-                      echo "result=already_released" >> "$GITHUB_OUTPUT"
-                      echo "v$VERSION already tagged — merge without release."
-                      exit 0
-                  fi
-
-                  echo "pr_version=$VERSION" >> "$GITHUB_OUTPUT"
-
-                  if [[ "$VERSION" == *"-"* ]]; then
-                      echo "prerelease=true" >> "$GITHUB_OUTPUT"
-                  else
-                      echo "prerelease=false" >> "$GITHUB_OUTPUT"
-                  fi
-
-                  echo "result=ok" >> "$GITHUB_OUTPUT"
-                  echo "Version: $VERSION (new release)"
+            # The action is a pure classifier; pr-validation applies the fail policy.
+            - name: Fail on malformed CHANGELOG
+              if: steps.version.outputs.result == 'malformed'
+              run: exit 1
 
             - name: Check CHANGELOG entry
-              if: steps.version.outputs.prerelease == 'false'
+              if: steps.version.outputs.result == 'ok' && steps.version.outputs.prerelease == 'false'
               run: |
-                  VERSION="${{ steps.version.outputs.pr_version }}"
+                  VERSION="${{ steps.version.outputs.version }}"
                   SECTION=$(sed -n "/## \[$VERSION\]/,/## \[/p" ${{ inputs.changelog-path }} | head -n -1)
                   CONTENT=$(echo "$SECTION" | grep -v "^#" | grep -v "^$" | head -1)
 
@@ -91,6 +43,8 @@ jobs:
                       echo "::warning::CHANGELOG section for $VERSION appears empty"
                   fi
 
+            # Relies on the "Fail on malformed CHANGELOG" step above to trip failure() —
+            # the two are coupled, don't remove one without the other.
             - name: Comment on malformed CHANGELOG
               if: failure() && steps.version.outputs.result == 'malformed'
               uses: actions/github-script@v8
