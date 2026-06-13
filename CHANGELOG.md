@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `extract-changelog-version` composite action — single source of truth for selecting and
+  validating the release version from `CHANGELOG.md` (first non-`Unreleased` heading, strict
+  SemVer 2.0.0 + ` - YYYY-MM-DD` date). Emits `result`/`version`/`base_version`/`tag`/`prerelease`.
+  Not yet wired into the reusable workflows — that follows in a second PR so the `@main` reference
+  resolves. Groundwork for unifying the three divergent extractors. (#43)
+
 ### Changed
 
 - **BREAKING:** `reusable-conventional-commits.yml` — default `max-length` lowered from
