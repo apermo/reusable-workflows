@@ -28,8 +28,12 @@ jobs:
               uses: actions/checkout@v5
               with:
                   repository: apermo/reusable-workflows
-                  ref: main
+                  # Pin to THIS reusable workflow's own commit so the action matches the
+                  # workflow version the consumer pinned (and so a PR's self-test exercises
+                  # the PR's action, not main's).
+                  ref: ${{ github.job_workflow_sha }}
                   path: .rw-actions
+                  persist-credentials: false
 
             - name: Extract version from CHANGELOG
               id: version
