@@ -18,3 +18,6 @@ jobs:
         steps:
             - uses: actions/checkout@v5
             - uses: reviewdog/action-actionlint@v1
+              with:
+                  # actionlint 1.7.x doesn't know the (valid) github.job_workflow_sha context.
+                  actionlint_flags: -ignore 'property "job_workflow_sha" is not defined'
