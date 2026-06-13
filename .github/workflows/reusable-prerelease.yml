@@ -29,26 +29,28 @@ jobs:
                       exit 1
                   fi
 
-            - name: Extract version and create tag
+            - name: Extract version from CHANGELOG
               id: version
-              run: |
-                  VERSION=$(grep -m1 -oP '(?<=## \[)\d+\.\d+\.\d+[^]]*' ${{ inputs.changelog-path }} || echo "")
+              uses: apermo/reusable-workflows/.github/actions/extract-changelog-version@main
+              with:
+                  changelog-path: ${{ inputs.changelog-path }}
 
-                  if [ -z "$VERSION" ]; then
-                      echo "::error::No version found in ${{ inputs.changelog-path }}"
+            - name: Build prerelease tag
+              id: tag
+              run: |
+                  RESULT="${{ steps.version.outputs.result }}"
+                  if [ "$RESULT" != "ok" ] && [ "$RESULT" != "already_released" ]; then
+                      echo "::error::No valid version heading in ${{ inputs.changelog-path }} (result: $RESULT)."
                       exit 1
                   fi
-
-                  BASE_VERSION=$(echo "$VERSION" | grep -oP '^\d+\.\d+\.\d+')
-                  TAG="v${BASE_VERSION}-${{ github.event.inputs.label }}"
-
+                  TAG="v${{ steps.version.outputs.base_version }}-${{ github.event.inputs.label }}"
                   echo "tag=$TAG" >> "$GITHUB_OUTPUT"
                   echo "Tag: $TAG"
 
             - name: Create prerelease
               run: |
-                  gh release create "${{ steps.version.outputs.tag }}" \
-                      --title "${{ steps.version.outputs.tag }}" \
+                  gh release create "${{ steps.tag.outputs.tag }}" \
+                      --title "${{ steps.tag.outputs.tag }}" \
                       --target "${{ github.ref_name }}" \
                       --generate-notes \
                       --prerelease
@@ -72,6 +74,6 @@ jobs:
                               issue_number: pr.number,
                               owner: context.repo.owner,
                               repo: context.repo.repo,
-                              body: `Prerelease [${{ steps.version.outputs.tag }}](https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/${{ steps.version.outputs.tag }}) created.`
+                              body: `Prerelease [${{ steps.tag.outputs.tag }}](https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/${{ steps.tag.outputs.tag }}) created.`
                           });
                       }
