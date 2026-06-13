@@ -4,6 +4,17 @@ description: >-
     shared by reusable-pr-validation, reusable-release, and reusable-prerelease so their version
     selection cannot diverge. Pure classifier — never fails the job; callers apply policy to result.
 
+# Usage — reference by FULL path from a reusable workflow. A relative "./" path would
+# resolve against the *caller* repo's checkout, not this one, so it must be the owner/repo
+# form. The caller's checkout must fetch tags for the already_released result to work:
+#
+#     - uses: actions/checkout@v5
+#       with:
+#           fetch-depth: 0
+#     - id: version
+#       uses: apermo/reusable-workflows/.github/actions/extract-changelog-version@main
+#     # ... then branch on steps.version.outputs.result (ok | already_released | no_version | malformed)
+
 inputs:
     changelog-path:
         description: 'Path to CHANGELOG.md'
@@ -104,6 +115,7 @@ runs:
               fi
 
               version="$LABEL"
+              # Defensive: SEMVER already guarantees the X.Y.Z prefix, so this always matches.
               if [[ "$version" =~ ^([0-9]+\.[0-9]+\.[0-9]+) ]]; then
                   base_version="${BASH_REMATCH[1]}"
               fi
@@ -113,6 +125,8 @@ runs:
               fi
 
               # Requires the caller checkout to have fetched tags (fetch-depth: 0 / fetch-tags).
+              # grep -q . => "any output line means the tag exists"; the if consumes its exit,
+              # so the non-zero "no match" status does not trip set -o pipefail.
               if git tag -l "$tag" | grep -q .; then
                   result=already_released
                   echo "$tag already tagged — merge without release."
