@@ -21,9 +21,19 @@ jobs:
               with:
                   fetch-depth: 0
 
+            # extract-changelog-version lives in this repo; check it out so a consumer
+            # repo (whose checkout above does not contain it) can resolve it. A relative
+            # ./ ref alone resolves against the consumer's workspace and fails.
+            - name: Check out reusable-workflows actions
+              uses: actions/checkout@v5
+              with:
+                  repository: apermo/reusable-workflows
+                  ref: main
+                  path: .rw-actions
+
             - name: Extract version from CHANGELOG
               id: version
-              uses: ./.github/actions/extract-changelog-version
+              uses: ./.rw-actions/.github/actions/extract-changelog-version
               with:
                   changelog-path: ${{ inputs.changelog-path }}
 

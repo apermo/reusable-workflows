@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- `reusable-pr-validation.yml`, `reusable-release.yml`, and `reusable-prerelease.yml` now check
+  `apermo/reusable-workflows` out into a subdir and reference the `extract-changelog-version` action
+  locally from there, instead of a bare `./` path. The relative path resolved against the
+  *consumer's* checkout (which has no `.github/actions/`), so every external caller failed with
+  "Can't find action.yml"; a same-repo `owner/repo/...@ref` ref doesn't resolve from a reusable
+  workflow either. Regression from 0.11.0. (#43)
+
 ## [0.11.0] - 2026-06-13
 
 ### Added

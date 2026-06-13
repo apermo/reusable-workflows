@@ -365,10 +365,10 @@ never fails the job; callers apply their own policy to the `result` output.
 | `tag` | Release tag (`v` + version); empty unless `ok`/`already_released` |
 | `prerelease` | `true` when the version carries a prerelease suffix |
 
-The reusable workflows in this repo reference it by relative path
-(`./.github/actions/extract-changelog-version`), since GitHub resolves that against this repo and
-rejects a same-repo `owner/repo/...@ref` reference from a reusable workflow. An external repo using
-the action **directly** references the full path with a ref, as below. Either way, check out with
+Because the action lives in the same repo as the reusable workflows that consume it, those
+workflows check this repo out into a subdir and reference it locally — a bare relative
+`./.github/actions/...` resolves against the *caller's* checkout (which has no `.github/actions/`),
+and a same-repo `owner/repo/...@ref` ref fails to resolve from a reusable workflow. Check out with
 `fetch-depth: 0` so the `already_released` tag check works:
 
 ```yaml
@@ -376,8 +376,13 @@ steps:
   - uses: actions/checkout@v5
     with:
       fetch-depth: 0
+  - uses: actions/checkout@v5
+    with:
+      repository: apermo/reusable-workflows
+      ref: main
+      path: .rw-actions
   - id: version
-    uses: apermo/reusable-workflows/.github/actions/extract-changelog-version@main
+    uses: ./.rw-actions/.github/actions/extract-changelog-version
   # branch on steps.version.outputs.result
 ```
 
