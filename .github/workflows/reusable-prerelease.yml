@@ -37,13 +37,15 @@ jobs:
 
             - name: Build prerelease tag
               id: tag
+              env:
+                  LABEL: ${{ github.event.inputs.label }}
               run: |
                   RESULT="${{ steps.version.outputs.result }}"
                   if [ "$RESULT" != "ok" ] && [ "$RESULT" != "already_released" ]; then
                       echo "::error::No valid version heading in ${{ inputs.changelog-path }} (result: $RESULT)."
                       exit 1
                   fi
-                  TAG="v${{ steps.version.outputs.base_version }}-${{ github.event.inputs.label }}"
+                  TAG="v${{ steps.version.outputs.base_version }}-$LABEL"
                   echo "tag=$TAG" >> "$GITHUB_OUTPUT"
                   echo "Tag: $TAG"
 
