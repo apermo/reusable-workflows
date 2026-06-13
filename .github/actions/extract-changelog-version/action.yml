@@ -16,11 +16,15 @@ description: >-
 #     - uses: actions/checkout@v5
 #       with:
 #           repository: apermo/reusable-workflows
-#           ref: main
+#           ref: ${{ github.job_workflow_sha }}   # matches the workflow version the consumer pinned
 #           path: .rw-actions
+#           persist-credentials: false
 #     - id: version
 #       uses: ./.rw-actions/.github/actions/extract-changelog-version
 #     # ... then branch on steps.version.outputs.result (ok | already_released | no_version | malformed)
+#
+# Note: the checkout leaves a .rw-actions/ dir in the caller's workspace — exclude it from any
+# in-job `git add`/archive/packaging steps.
 
 inputs:
     changelog-path:

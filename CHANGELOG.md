@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   "Can't find action.yml"; a same-repo `owner/repo/...@ref` ref doesn't resolve from a reusable
   workflow either. Regression from 0.11.0. (#43)
 
+### Changed
+
+- The action checkout in `reusable-pr-validation.yml`, `reusable-release.yml`, and
+  `reusable-prerelease.yml` is pinned to `${{ github.job_workflow_sha }}` (the reusable workflow's
+  own commit) instead of `main`, so consumers that pin the workflow to a version get the matching
+  action, and a PR's self-test exercises the PR's action rather than `main`'s. The checkout also
+  sets `persist-credentials: false`. (#43)
+
 ## [0.11.0] - 2026-06-13
 
 ### Added
