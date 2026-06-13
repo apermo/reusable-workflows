@@ -23,7 +23,7 @@ jobs:
 
             - name: Extract version from CHANGELOG
               id: version
-              uses: apermo/reusable-workflows/.github/actions/extract-changelog-version@main
+              uses: ./.github/actions/extract-changelog-version
               with:
                   changelog-path: ${{ inputs.changelog-path }}
 

@@ -365,9 +365,11 @@ never fails the job; callers apply their own policy to the `result` output.
 | `tag` | Release tag (`v` + version); empty unless `ok`/`already_released` |
 | `prerelease` | `true` when the version carries a prerelease suffix |
 
-Reference it by **full path** (a relative `./` path would resolve against the caller repo's
-checkout, not this one), and check out with `fetch-depth: 0` so the `already_released` tag check
-works:
+The reusable workflows in this repo reference it by relative path
+(`./.github/actions/extract-changelog-version`), since GitHub resolves that against this repo and
+rejects a same-repo `owner/repo/...@ref` reference from a reusable workflow. An external repo using
+the action **directly** references the full path with a ref, as below. Either way, check out with
+`fetch-depth: 0` so the `already_released` tag check works:
 
 ```yaml
 steps:
