@@ -69,17 +69,18 @@ jobs:
         steps:
             - uses: actions/checkout@v5
 
-            # plugin-check-action provisions its own wp-env (plugin-check plugin,
-            # port mapping, plugin slug) only when no .wp-env.json is present. A repo
-            # one (required by reusable-wp-e2e.yml) makes the action skip its setup and
-            # then die on "Environment not initialized". Move it aside for the run.
+            # plugin-check-action provisions its own wp-env only when no
+            # .wp-env.json is present; a committed one (needed by reusable-wp-e2e.yml)
+            # makes the action skip setup and die on "Environment not initialized".
+            # Stash it in $RUNNER_TEMP for the run — renaming it to an in-tree dotfile
+            # instead trips plugin-check's "hidden files are not permitted" error.
             - name: Hide repo wp-env config
               id: hide-wp-env
               run: |
                   moved=
                   for f in .wp-env.json .wp-env.override.json; do
                       if [ -f "$f" ]; then
-                          mv "$f" "$f.plugin-check-bak"
+                          mv "$f" "$RUNNER_TEMP/$f.plugin-check-bak"
                           moved="$moved $f"
                       fi
                   done
@@ -107,7 +108,7 @@ jobs:
               if: always() && steps.hide-wp-env.outputs.moved == 'true'
               run: |
                   for f in .wp-env.json .wp-env.override.json; do
-                      if [ -f "$f.plugin-check-bak" ]; then
-                          mv "$f.plugin-check-bak" "$f"
+                      if [ -f "$RUNNER_TEMP/$f.plugin-check-bak" ]; then
+                          mv "$RUNNER_TEMP/$f.plugin-check-bak" "$f"
                       fi
                   done
