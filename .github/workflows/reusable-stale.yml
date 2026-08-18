@@ -12,7 +12,8 @@ on:
                 description: 'Days after stale before closing an issue'
                 required: false
                 type: number
-                default: 30
+                # -1 disables closing entirely: issues are never auto-closed.
+                default: -1
             days-before-pr-stale:
                 description: 'Days of inactivity before marking a PR as stale'
                 required: false
@@ -22,7 +23,8 @@ on:
                 description: 'Days after stale before closing a PR'
                 required: false
                 type: number
-                default: 30
+                # -1 disables closing entirely: PRs are never auto-closed.
+                default: -1
             exempt-labels:
                 description: 'Comma-separated exempt labels'
                 required: false
